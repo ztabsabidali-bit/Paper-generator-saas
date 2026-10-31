@@ -1,0 +1,43 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "paper-generator-saas",
+  "main": ".open-next/worker.js",
+
+  // Must stay >= 2024-09-23 for the OpenNext adapter.
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+
+  "observability": {
+    "enabled": true
+  },
+
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "paper-generator-saas"
+    }
+  ]
+
+  // ---------------------------------------------------------------------------
+  // Runtime configuration
+  // ---------------------------------------------------------------------------
+  // Do NOT commit real secrets. Set them with Wrangler instead:
+  //
+  //   npx wrangler secret put NEXT_PUBLIC_SUPABASE_URL
+  //   npx wrangler secret put NEXT_PUBLIC_SUPABASE_ANON_KEY
+  //   npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY
+  //
+  // NEXT_PUBLIC_* values are inlined during `next build`, so they must also be
+  // present in the build environment (e.g. Cloudflare Workers Builds variables).
+  //
+  // "vars": {
+  //   "NEXT_PUBLIC_SUPABASE_URL": "https://<project-ref>.supabase.co",
+  //   "NEXT_PUBLIC_SUPABASE_ANON_KEY": "<anon-key>"
+  // }
+  // ---------------------------------------------------------------------------
+}

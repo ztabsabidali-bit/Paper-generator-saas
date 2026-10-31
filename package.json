@@ -1,0 +1,45 @@
+{
+  "name": "paper-generator-saas",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
+    "db:types": "supabase gen types typescript --schema public > src/types/database.generated.ts"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.118.0",
+    "katex": "^0.16.22",
+    "lucide-react": "^1.66.0",
+    "next": "16.4.3",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-markdown": "^10.1.0",
+    "rehype-katex": "^7.0.1",
+    "remark-math": "^6.0.0",
+    "server-only": "^0.0.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@opennextjs/cloudflare": "^1.20.15",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0",
+    "wrangler": "^4.156.0"
+  }
+}
