@@ -102,9 +102,7 @@ Pages). Configuration lives in `wrangler.jsonc` and `open-next.config.ts`.
 ```bash
 npx wrangler login
 
-# Build-time public values (also set these in Workers Builds if you use CI)
-npx wrangler secret put NEXT_PUBLIC_SUPABASE_URL
-npx wrangler secret put NEXT_PUBLIC_SUPABASE_ANON_KEY
+# The only runtime secret. Read by src/lib/supabase/admin.ts (server-only).
 npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY
 
 npm run preview    # build + run in the Workers runtime locally
@@ -113,12 +111,31 @@ npm run deploy     # build + deploy to Cloudflare
 
 Notes:
 
-- `NEXT_PUBLIC_*` values are inlined at build time. They must be present during
-  `opennextjs-cloudflare build`, not only at runtime.
+- `NEXT_PUBLIC_*` values are inlined at build time from `.env.local` / `.dev.vars`.
+  They must be present during `opennextjs-cloudflare build`; they are **not** read at
+  runtime, so they do not need to exist as Worker variables or secrets.
+- Add runtime secrets with `wrangler secret put`, never as dashboard variables:
+  `wrangler.jsonc` has no `vars` block, so every deploy replaces the Worker's variable
+  set and silently removes anything configured only in the dashboard. Secrets survive.
 - `nodejs_compat` and `compatibility_date >= 2024-09-23` are required by the adapter.
 - `images.unoptimized` is enabled so no Cloudflare Images binding is needed.
 - If you later enable ISR/`revalidate`, add the R2 incremental cache in
   `open-next.config.ts` and bind a bucket named `NEXT_INC_CACHE_R2_BUCKET`.
+
+### Deploying from Windows
+
+`opennextjs-cloudflare deploy` starts Miniflare/`workerd` to read `.dev.vars`, and that
+crashes on some Windows hosts (`0xc0000005` access violation, usually an outdated Visual C++
+Redistributable). Skip that step and upload the built Worker directly:
+
+```powershell
+npm run build:cf                            # opennextjs-cloudflare build
+$env:OPEN_NEXT_DEPLOY = "true"; npx wrangler deploy
+```
+
+`OPEN_NEXT_DEPLOY=true` stops `wrangler` from delegating back to the OpenNext deploy command.
+`wrangler deploy` only uploads `.open-next/worker.js` plus assets and never boots `workerd`.
+Updating the Visual C++ Redistributable restores `npm run preview` and the normal `npm run deploy`.
 
 ---
 
@@ -221,6 +238,7 @@ a *set*, not directly to a paper.
 | --- | --- |
 | `npm run dev` | Next.js dev server |
 | `npm run build` | Next.js production build |
+| `npm run build:cf` | OpenNext build for the Cloudflare Worker |
 | `npm run preview` | Build + run in the Cloudflare Workers runtime |
 | `npm run deploy` | Build + deploy |
 | `npm run cf-typegen` | Generate `CloudflareEnv` types |
