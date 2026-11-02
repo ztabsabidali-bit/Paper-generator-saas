@@ -22,7 +22,7 @@ export async function listUsers(supabase: SupabaseServerClient): Promise<StaffMe
   const { data, error } = await supabase
     .from("users")
     .select(
-      "id, email, full_name, role, is_active, institution_id, created_at, institution:institutions(id, name)",
+      "id, email, full_name, role, is_active, institution_id, created_at, institution:institutions!users_institution_id_fkey(id, name)",
     )
     .order("created_at", { ascending: true });
 
