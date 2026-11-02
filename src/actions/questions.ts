@@ -32,6 +32,10 @@ export async function saveQuestionAction(
   const { supabase, profile } = context;
   const values = parsed.data;
 
+  if (!profile.institution_id) {
+    return actionError("Your account is not linked to an institution. Ask a super admin.");
+  }
+
   if (values.id) {
     const existing = await getQuestionById(supabase, values.id);
     if (!existing) return actionError("That question no longer exists.");
@@ -67,7 +71,7 @@ export async function saveQuestionAction(
 
     const { data, error } = await supabase
       .from("questions")
-      .insert({ ...payload, created_by: profile.id })
+      .insert({ ...payload, created_by: profile.id, institution_id: profile.institution_id })
       .select("id")
       .single();
 

@@ -18,6 +18,7 @@ export interface CreatePaperPayload {
   title: string;
   class_name: string;
   subject_id: string;
+  institution_id: string;
   instructions: string | null;
   duration_minutes: number;
   exam_session: string | null;
@@ -67,6 +68,7 @@ export async function createPaper(
       total_marks: payload.total_marks,
       class_name: payload.class_name,
       subject_id: payload.subject_id,
+      institution_id: payload.institution_id,
       instructions: payload.instructions,
       duration_minutes: payload.duration_minutes,
       exam_session: payload.exam_session,

@@ -11,8 +11,9 @@ import {
 } from "lucide-react";
 import { requireSession } from "@/lib/auth/guards";
 import { ROLE_META } from "@/lib/constants";
-import { canManageBank, canManageUsers } from "@/lib/rbac";
+import { canManageBank, canManageUsers, canCreateInstitutions } from "@/lib/rbac";
 import { formatDate } from "@/lib/utils";
+import { getInstitutionById } from "@/services/institution.service";
 import { Badge } from "@/components/ui/badge";
 import { buttonClasses } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,6 +39,10 @@ export default async function DashboardPage({
       .order("created_at", { ascending: false })
       .limit(5),
   ]);
+
+  const institution = profile.institution_id
+    ? await getInstitutionById(supabase, profile.institution_id)
+    : null;
 
   const roleMeta = ROLE_META[profile.role];
   const firstName = profile.full_name?.split(" ")[0] ?? "there";
@@ -69,6 +74,7 @@ export default async function DashboardPage({
 
       <div className="mb-6 flex flex-wrap items-center gap-2">
         <Badge tone="brand">{roleMeta.label}</Badge>
+        {institution ? <Badge tone="neutral">{institution.name}</Badge> : null}
         <span className="text-xs text-slate-500">
           Role permissions are enforced by Supabase row level security.
         </span>
@@ -171,7 +177,12 @@ export default async function DashboardPage({
             ) : null}
             {canManageUsers(profile.role) ? (
               <QuickLink href="/users" icon={<Users className="h-4 w-4" />}>
-                Invite staff
+                {canCreateInstitutions(profile.role) ? "Manage staff" : "Invite staff"}
+              </QuickLink>
+            ) : null}
+            {canCreateInstitutions(profile.role) ? (
+              <QuickLink href="/institutions" icon={<GraduationCap className="h-4 w-4" />}>
+                Manage institutions
               </QuickLink>
             ) : null}
           </CardContent>

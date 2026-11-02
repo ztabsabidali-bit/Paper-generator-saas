@@ -37,3 +37,6 @@ pnpm-debug.log*
 .vscode/
 *.tsbuildinfo
 coverage/
+
+# Supabase CLI local cache
+supabase/.temp/

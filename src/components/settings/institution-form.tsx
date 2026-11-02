@@ -10,7 +10,13 @@ import { Field, Input, Textarea } from "@/components/ui/field";
 import { Alert } from "@/components/ui/shell";
 import type { InstitutionSettings } from "@/types/domain";
 
-export function InstitutionForm({ institution }: { institution: InstitutionSettings }) {
+export function InstitutionForm({
+  institution,
+  institutionId,
+}: {
+  institution: InstitutionSettings;
+  institutionId?: string;
+}) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -29,6 +35,7 @@ export function InstitutionForm({ institution }: { institution: InstitutionSetti
     setNotice(null);
     startTransition(async () => {
       const result = await saveInstitutionAction({
+        institution_id: institutionId,
         name,
         tagline,
         address,

@@ -3,16 +3,35 @@ import "server-only";
 import type { SupabaseServerClient } from "@/lib/auth/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { UserRole } from "@/types/database";
-import type { Profile } from "@/types/domain";
+import type { StaffMember } from "@/types/domain";
 
-export async function listUsers(supabase: SupabaseServerClient): Promise<Profile[]> {
+interface RawStaffRow extends Omit<StaffMember, "institution"> {
+  institution: { id: string; name: string } | { id: string; name: string }[] | null;
+}
+
+function first<T>(value: T | T[] | null | undefined): T | null {
+  if (!value) return null;
+  return Array.isArray(value) ? (value[0] ?? null) : value;
+}
+
+/**
+ * RLS decides the scope: the developer sees every institution, an institution
+ * head sees their own staff, a teacher only sees themselves.
+ */
+export async function listUsers(supabase: SupabaseServerClient): Promise<StaffMember[]> {
   const { data, error } = await supabase
     .from("users")
-    .select("id, email, full_name, role, is_active, created_at")
+    .select(
+      "id, email, full_name, role, is_active, institution_id, created_at, institution:institutions(id, name)",
+    )
     .order("created_at", { ascending: true });
 
   if (error) throw new Error(`Could not load users: ${error.message}`);
-  return (data ?? []) as Profile[];
+
+  return ((data ?? []) as unknown as RawStaffRow[]).map((row) => ({
+    ...row,
+    institution: first(row.institution),
+  }));
 }
 
 export interface CreateUserInput {
@@ -20,11 +39,13 @@ export interface CreateUserInput {
   full_name: string;
   role: UserRole;
   password: string;
+  institution_id: string | null;
 }
 
 /**
  * Provisions an account with the service-role key. The `on_auth_user_created`
- * trigger creates the public.users row; the role is then applied explicitly.
+ * trigger creates the public.users row; the role and institution are applied
+ * explicitly afterwards.
  */
 export async function createUser(input: CreateUserInput): Promise<string> {
   const admin = createAdminClient();
@@ -33,7 +54,10 @@ export async function createUser(input: CreateUserInput): Promise<string> {
     email: input.email,
     password: input.password,
     email_confirm: true,
-    user_metadata: { full_name: input.full_name },
+    user_metadata: {
+      full_name: input.full_name,
+      ...(input.institution_id ? { institution_id: input.institution_id } : {}),
+    },
   });
 
   if (error || !data.user) {
@@ -48,6 +72,7 @@ export async function createUser(input: CreateUserInput): Promise<string> {
       email: input.email,
       full_name: input.full_name,
       role: input.role,
+      institution_id: input.institution_id,
     },
     { onConflict: "id" },
   );

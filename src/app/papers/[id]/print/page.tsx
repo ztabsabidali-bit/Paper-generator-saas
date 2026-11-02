@@ -21,12 +21,10 @@ export default async function PrintPaperPage({
   const { set: requestedSet } = await searchParams;
   const { supabase } = await requireSession(`/papers/${id}/print`);
 
-  const [paper, institution] = await Promise.all([
-    getPaperWithSets(supabase, id),
-    getInstitution(supabase),
-  ]);
-
+  const paper = await getPaperWithSets(supabase, id);
   if (!paper || paper.sets.length === 0) notFound();
+
+  const institution = await getInstitution(supabase, paper.institution_id);
 
   const activeSet =
     paper.sets.find((set) => set.set_label === requestedSet) ?? paper.sets[0];

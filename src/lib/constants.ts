@@ -63,17 +63,17 @@ export const ROLE_META: Record<
 > = {
   super_admin: {
     label: "Super admin",
-    description: "Full control, including staff accounts and roles.",
+    description: "Platform owner. Adds institutions and provisions their heads.",
     className: "bg-indigo-50 text-indigo-700 ring-indigo-600/20",
   },
   admin: {
     label: "Admin",
-    description: "Manages the question bank, subjects and institution profile.",
+    description: "Institution head. Manages staff, subjects, the bank and branding.",
     className: "bg-sky-50 text-sky-700 ring-sky-600/20",
   },
   teacher: {
     label: "Teacher",
-    description: "Creates questions and papers for their own classes.",
+    description: "Paper generator. Creates questions and papers for their institution.",
     className: "bg-slate-100 text-slate-700 ring-slate-600/20",
   },
 };

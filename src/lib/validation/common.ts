@@ -30,6 +30,7 @@ export const userInputSchema = z.object({
     .string()
     .min(8, "Use at least 8 characters")
     .max(72, "Supabase passwords are limited to 72 characters"),
+  institution_id: z.uuid().nullish(),
 });
 
 export const roleUpdateSchema = z.object({

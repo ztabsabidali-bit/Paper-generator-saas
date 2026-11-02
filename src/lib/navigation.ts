@@ -6,7 +6,8 @@ export type NavIcon =
   | "papers"
   | "subjects"
   | "settings"
-  | "users";
+  | "users"
+  | "institutions";
 
 export interface NavItem {
   label: string;
@@ -56,7 +57,14 @@ export const NAV_ITEMS: NavItem[] = [
     label: "Staff",
     href: "/users",
     icon: "users",
-    minRole: "super_admin",
+    minRole: "admin",
     description: "Accounts and roles",
+  },
+  {
+    label: "Institutions",
+    href: "/institutions",
+    icon: "institutions",
+    minRole: "super_admin",
+    description: "Schools on the platform",
   },
 ];

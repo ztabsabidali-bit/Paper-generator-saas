@@ -8,10 +8,10 @@ import { PageHeader } from "@/components/ui/shell";
 export const metadata = { title: "Generate paper" };
 
 export default async function NewPaperPage() {
-  const { supabase } = await requireSession("/papers/new");
+  const { supabase, profile } = await requireSession("/papers/new");
   const [catalog, institution] = await Promise.all([
     getCatalog(supabase),
-    getInstitution(supabase),
+    getInstitution(supabase, profile.institution_id),
   ]);
 
   return (

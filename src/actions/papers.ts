@@ -28,17 +28,24 @@ export async function generatePaperAction(
 
   const context = await getSessionContext();
   if (!context) return actionError("Your session has expired. Sign in again.");
-  const { supabase } = context;
+  const { supabase, profile } = context;
   const values = parsed.data;
+
+  if (!profile.institution_id) {
+    return actionError("Your account is not linked to an institution. Ask a super admin.");
+  }
 
   try {
     const { data: subject, error: subjectError } = await supabase
       .from("subjects")
-      .select("id, class_name, subject_name")
+      .select("id, class_name, subject_name, institution_id")
       .eq("id", values.subject_id)
       .maybeSingle();
 
     if (subjectError || !subject) return actionError("That subject could not be found.");
+    if (subject.institution_id !== profile.institution_id) {
+      return actionError("That subject belongs to another institution.");
+    }
 
     const { data: topics, error: topicsError } = await supabase
       .from("topics")
@@ -75,6 +82,7 @@ export async function generatePaperAction(
       title: values.title,
       class_name: subject.class_name,
       subject_id: subject.id,
+      institution_id: subject.institution_id,
       instructions: values.instructions ?? null,
       duration_minutes: values.duration_minutes,
       exam_session: values.exam_session ?? null,

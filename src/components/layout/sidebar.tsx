@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BookOpen,
+  Building2,
   FileText,
   GraduationCap,
   LayoutDashboard,
@@ -24,6 +25,7 @@ const ICONS: Record<NavIcon, typeof LayoutDashboard> = {
   subjects: BookOpen,
   settings: Settings,
   users: Users,
+  institutions: Building2,
 };
 
 function isActive(pathname: string, href: string) {
@@ -34,10 +36,12 @@ export function Sidebar({
   role,
   name,
   email,
+  institutionName,
 }: {
   role: UserRole;
   name: string | null;
   email: string;
+  institutionName?: string | null;
 }) {
   const pathname = usePathname();
   const items = NAV_ITEMS.filter((item) => hasRole(role, item.minRole));
@@ -78,7 +82,9 @@ export function Sidebar({
             <span className="block text-sm font-semibold leading-tight text-slate-900">
               PaperForge
             </span>
-            <span className="block text-[11px] text-slate-500">Exam paper studio</span>
+            <span className="block truncate text-[11px] text-slate-500">
+              {institutionName ?? "Exam paper studio"}
+            </span>
           </span>
         </Link>
 

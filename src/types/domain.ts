@@ -53,6 +53,7 @@ export interface Paper {
   title: string;
   total_marks: number;
   created_by: string | null;
+  institution_id: string;
   created_at: string;
   updated_at: string;
   class_name: string;
@@ -101,13 +102,23 @@ export interface InstitutionSettings {
   footer_note: string | null;
 }
 
+export interface Institution extends InstitutionSettings {
+  id: string;
+  created_at: string;
+}
+
 export interface Profile {
   id: string;
   email: string;
   full_name: string | null;
   role: UserRole;
   is_active: boolean;
+  institution_id: string | null;
   created_at: string;
+}
+
+export interface StaffMember extends Profile {
+  institution: { id: string; name: string } | null;
 }
 
 export interface RoleOption {

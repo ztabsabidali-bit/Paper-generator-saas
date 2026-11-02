@@ -15,16 +15,21 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, Input, Select } from "@/components/ui/field";
 import { Alert } from "@/components/ui/shell";
 import { ROLE_META } from "@/lib/constants";
+import { assignableRoles } from "@/lib/rbac";
 import { formatDate } from "@/lib/utils";
 import type { UserRole } from "@/types/database";
-import type { Profile } from "@/types/domain";
+import type { Institution, StaffMember } from "@/types/domain";
 
 export function UsersManager({
   users,
   currentUserId,
+  currentRole,
+  institutions,
 }: {
-  users: Profile[];
+  users: StaffMember[];
   currentUserId: string;
+  currentRole: UserRole;
+  institutions: Institution[];
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -32,17 +37,27 @@ export function UsersManager({
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
+  const roles = assignableRoles(currentRole);
+  const isDeveloper = currentRole === "super_admin";
+
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<UserRole>("teacher");
+  const [role, setRole] = useState<UserRole>(roles.includes("teacher") ? "teacher" : "admin");
+  const [institutionId, setInstitutionId] = useState(institutions[0]?.id ?? "");
 
   function handleCreate(event: React.FormEvent) {
     event.preventDefault();
     setError(null);
     setNotice(null);
     startTransition(async () => {
-      const result = await createUserAction({ full_name: fullName, email, password, role });
+      const result = await createUserAction({
+        full_name: fullName,
+        email,
+        password,
+        role,
+        institution_id: isDeveloper ? (institutionId || null) : undefined,
+      });
       if (!result.ok) {
         setError(result.error);
         return;
@@ -50,7 +65,7 @@ export function UsersManager({
       setFullName("");
       setEmail("");
       setPassword("");
-      setRole("teacher");
+      setRole(roles.includes("teacher") ? "teacher" : "admin");
       setNotice("Account created. Share the temporary password securely.");
       router.refresh();
     });
@@ -70,7 +85,7 @@ export function UsersManager({
     });
   }
 
-  function toggleStatus(user: Profile) {
+  function toggleStatus(user: StaffMember) {
     setError(null);
     setBusyId(user.id);
     startTransition(async () => {
@@ -87,7 +102,7 @@ export function UsersManager({
     });
   }
 
-  function remove(user: Profile) {
+  function remove(user: StaffMember) {
     if (
       !window.confirm(
         `Delete ${user.full_name ?? user.email}? Their questions stay, but the account is removed.`,
@@ -122,6 +137,8 @@ export function UsersManager({
             {users.map((user) => {
               const isSelf = user.id === currentUserId;
               const roleMeta = ROLE_META[user.role];
+              const targetIsSuperAdmin = user.role === "super_admin";
+              const canTouch = !isSelf && (isDeveloper || !targetIsSuperAdmin);
               return (
                 <li key={user.id} className="flex flex-wrap items-center gap-3 px-5 py-3.5">
                   <div className="min-w-0 flex-1">
@@ -132,7 +149,8 @@ export function UsersManager({
                     </p>
                     <p className="truncate text-xs text-slate-500">{user.email}</p>
                     <p className="mt-0.5 text-[11px] text-slate-400">
-                      Joined {formatDate(user.created_at)} ·{" "}
+                      {user.institution?.name ?? "No institution"} · Joined{" "}
+                      {formatDate(user.created_at)} ·{" "}
                       <span className={roleMeta.className.split(" ")[1]}>
                         {roleMeta.label}
                       </span>
@@ -143,13 +161,13 @@ export function UsersManager({
                     <Select
                       value={user.role}
                       onChange={(event) => changeRole(user.id, event.target.value as UserRole)}
-                      disabled={isSelf || (pending && busyId === user.id)}
+                      disabled={!canTouch || (pending && busyId === user.id)}
                       className="h-8 w-32 text-xs"
                       aria-label={`Role for ${user.email}`}
                     >
-                      {Object.entries(ROLE_META).map(([value, meta]) => (
+                      {(roles.includes(user.role) ? roles : [user.role, ...roles]).map((value) => (
                         <option key={value} value={value}>
-                          {meta.label}
+                          {ROLE_META[value].label}
                         </option>
                       ))}
                     </Select>
@@ -158,7 +176,7 @@ export function UsersManager({
                       variant="ghost"
                       size="sm"
                       onClick={() => toggleStatus(user)}
-                      disabled={isSelf || (pending && busyId === user.id)}
+                      disabled={!canTouch || (pending && busyId === user.id)}
                       title={user.is_active ? "Deactivate" : "Activate"}
                     >
                       {user.is_active ? (
@@ -168,19 +186,21 @@ export function UsersManager({
                       )}
                     </Button>
 
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => remove(user)}
-                      disabled={isSelf || (pending && busyId === user.id)}
-                      title="Delete account"
-                    >
-                      {pending && busyId === user.id ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
-                      ) : (
-                        <Trash2 className="h-3.5 w-3.5" aria-hidden />
-                      )}
-                    </Button>
+                    {isDeveloper ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => remove(user)}
+                        disabled={isSelf || (pending && busyId === user.id)}
+                        title="Delete account"
+                      >
+                        {pending && busyId === user.id ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+                        ) : (
+                          <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                        )}
+                      </Button>
+                    ) : null}
                   </div>
                 </li>
               );
@@ -235,14 +255,43 @@ export function UsersManager({
                 value={role}
                 onChange={(event) => setRole(event.target.value as UserRole)}
               >
-                {Object.entries(ROLE_META).map(([value, meta]) => (
+                {roles.map((value) => (
                   <option key={value} value={value}>
-                    {meta.label} — {meta.description}
+                    {ROLE_META[value].label} — {ROLE_META[value].description}
                   </option>
                 ))}
               </Select>
             </Field>
-            <Button type="submit" className="w-full" disabled={pending}>
+            {isDeveloper && role !== "super_admin" ? (
+              <Field
+                label="Institution"
+                htmlFor="new-institution"
+                hint={
+                  institutions.length === 0
+                    ? "Add an institution first from the Institutions page."
+                    : undefined
+                }
+                required
+              >
+                <Select
+                  id="new-institution"
+                  value={institutionId}
+                  onChange={(event) => setInstitutionId(event.target.value)}
+                  required
+                >
+                  {institutions.map((institution) => (
+                    <option key={institution.id} value={institution.id}>
+                      {institution.name}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+            ) : null}
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={pending || (isDeveloper && role !== "super_admin" && !institutionId)}
+            >
               {pending ? (
                 <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
               ) : (
@@ -252,8 +301,8 @@ export function UsersManager({
             </Button>
           </form>
           <p className="mt-3 text-[11px] leading-relaxed text-slate-500">
-            Account creation uses the Supabase service-role key on the server. Roles are
-            re-checked in Postgres before any write.
+            Account creation uses the Supabase service-role key on the server. Roles and
+            institutions are re-checked in Postgres before any write.
           </p>
         </CardContent>
       </Card>

@@ -22,6 +22,7 @@ export interface Database {
           full_name: string | null;
           role: UserRole;
           is_active: boolean;
+          institution_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -31,6 +32,7 @@ export interface Database {
           full_name?: string | null;
           role?: UserRole;
           is_active?: boolean;
+          institution_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -40,6 +42,46 @@ export interface Database {
           full_name?: string | null;
           role?: UserRole;
           is_active?: boolean;
+          institution_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      institutions: {
+        Row: {
+          id: string;
+          name: string;
+          tagline: string | null;
+          address: string | null;
+          logo_url: string | null;
+          exam_session: string | null;
+          footer_note: string | null;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          tagline?: string | null;
+          address?: string | null;
+          logo_url?: string | null;
+          exam_session?: string | null;
+          footer_note?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          tagline?: string | null;
+          address?: string | null;
+          logo_url?: string | null;
+          exam_session?: string | null;
+          footer_note?: string | null;
+          created_by?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -48,18 +90,21 @@ export interface Database {
       subjects: {
         Row: {
           id: string;
+          institution_id: string;
           class_name: string;
           subject_name: string;
           created_at: string;
         };
         Insert: {
           id?: string;
+          institution_id?: string;
           class_name: string;
           subject_name: string;
           created_at?: string;
         };
         Update: {
           id?: string;
+          institution_id?: string;
           class_name?: string;
           subject_name?: string;
           created_at?: string;
@@ -100,6 +145,7 @@ export interface Database {
         Row: {
           id: string;
           topic_id: string;
+          institution_id: string;
           question_type: QuestionType;
           question_text: string;
           options: Json | null;
@@ -117,6 +163,7 @@ export interface Database {
         Insert: {
           id?: string;
           topic_id: string;
+          institution_id?: string;
           question_type: QuestionType;
           question_text: string;
           options?: Json | null;
@@ -134,6 +181,7 @@ export interface Database {
         Update: {
           id?: string;
           topic_id?: string;
+          institution_id?: string;
           question_type?: QuestionType;
           question_text?: string;
           options?: Json | null;
@@ -156,6 +204,7 @@ export interface Database {
           title: string;
           total_marks: number;
           created_by: string | null;
+          institution_id: string;
           created_at: string;
           updated_at: string;
           class_name: string;
@@ -171,6 +220,7 @@ export interface Database {
           title: string;
           total_marks?: number;
           created_by?: string | null;
+          institution_id?: string;
           created_at?: string;
           updated_at?: string;
           class_name?: string;
@@ -186,6 +236,7 @@ export interface Database {
           title?: string;
           total_marks?: number;
           created_by?: string | null;
+          institution_id?: string;
           created_at?: string;
           updated_at?: string;
           class_name?: string;
@@ -252,42 +303,6 @@ export interface Database {
         };
         Relationships: [];
       };
-      institution_settings: {
-        Row: {
-          id: boolean;
-          name: string;
-          tagline: string | null;
-          address: string | null;
-          logo_url: string | null;
-          exam_session: string | null;
-          footer_note: string | null;
-          updated_by: string | null;
-          updated_at: string;
-        };
-        Insert: {
-          id?: boolean;
-          name: string;
-          tagline?: string | null;
-          address?: string | null;
-          logo_url?: string | null;
-          exam_session?: string | null;
-          footer_note?: string | null;
-          updated_by?: string | null;
-          updated_at?: string;
-        };
-        Update: {
-          id?: boolean;
-          name?: string;
-          tagline?: string | null;
-          address?: string | null;
-          logo_url?: string | null;
-          exam_session?: string | null;
-          footer_note?: string | null;
-          updated_by?: string | null;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -295,9 +310,37 @@ export interface Database {
         Args: Record<string, never>;
         Returns: UserRole;
       };
+      auth_institution_id: {
+        Args: Record<string, never>;
+        Returns: string | null;
+      };
+      is_super_admin: {
+        Args: Record<string, never>;
+        Returns: boolean;
+      };
+      same_institution: {
+        Args: { p_institution_id: string };
+        Returns: boolean;
+      };
       can_manage_bank: {
         Args: Record<string, never>;
         Returns: boolean;
+      };
+      can_access_paper: {
+        Args: { p_paper_id: string };
+        Returns: boolean;
+      };
+      subject_institution: {
+        Args: { p_subject_id: string };
+        Returns: string | null;
+      };
+      topic_institution: {
+        Args: { p_topic_id: string };
+        Returns: string | null;
+      };
+      paper_institution: {
+        Args: { p_paper_id: string };
+        Returns: string | null;
       };
     };
     Enums: {

@@ -23,11 +23,14 @@ export async function createSubjectAction(input: unknown): Promise<ActionResult<
   if (!canManageBank(context.profile.role)) {
     return actionError("Only admins can manage subjects.");
   }
+  if (!context.profile.institution_id) {
+    return actionError("Your account is not linked to an institution. Ask a super admin.");
+  }
 
   try {
     const { data, error } = await context.supabase
       .from("subjects")
-      .insert(parsed.data)
+      .insert({ ...parsed.data, institution_id: context.profile.institution_id })
       .select("id")
       .single();
 
