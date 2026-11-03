@@ -53,7 +53,7 @@ export function InstitutionForm({
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+    <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
       <Card>
         <CardHeader>
           <CardTitle>Print header</CardTitle>
@@ -90,7 +90,7 @@ export function InstitutionForm({
               />
             </Field>
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field label="Exam session" htmlFor="session">
                 <Input
                   id="session"
@@ -138,7 +138,7 @@ export function InstitutionForm({
         </CardContent>
       </Card>
 
-      <aside className="lg:sticky lg:top-20 lg:h-fit">
+      <aside className="xl:sticky xl:top-20 xl:h-fit">
         <Card>
           <CardHeader>
             <CardTitle>Header preview</CardTitle>
@@ -154,7 +154,7 @@ export function InstitutionForm({
                     Logo
                   </div>
                 )}
-                <div className="min-w-0 text-center">
+                <div className="min-w-0 flex-1 text-center">
                   <p className="truncate text-[11px] font-bold uppercase tracking-wide">
                     {name || "Institution name"}
                   </p>

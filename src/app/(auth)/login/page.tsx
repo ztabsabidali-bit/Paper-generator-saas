@@ -19,7 +19,7 @@ export default async function LoginPage({
   const configured = isSupabaseConfigured();
 
   return (
-    <div className="grid min-h-screen lg:grid-cols-2">
+    <div className="grid grid-cols-1 min-h-screen lg:grid-cols-2">
       <div className="hidden flex-col justify-between bg-slate-900 px-12 py-10 text-white lg:flex">
         <Link href="/" className="flex items-center gap-2.5">
           <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/10">

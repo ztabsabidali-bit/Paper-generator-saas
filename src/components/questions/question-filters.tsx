@@ -58,9 +58,9 @@ export function QuestionFilters({ catalog }: { catalog: FilterSubject[] }) {
 
   return (
     <div className="mb-4 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
-      <div className="grid gap-2 lg:grid-cols-[1.4fr_repeat(6,minmax(0,1fr))_auto]">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-[1.4fr_repeat(6,minmax(0,1fr))_auto]">
         <form
-          className="relative"
+          className="relative sm:col-span-2 md:col-span-3 xl:col-span-1"
           onSubmit={(event) => {
             event.preventDefault();
             setParam("q", search.trim());
@@ -173,7 +173,7 @@ export function QuestionFilters({ catalog }: { catalog: FilterSubject[] }) {
             router.push("/questions");
           }}
           disabled={!hasFilters}
-          className="h-10"
+          className="h-10 sm:col-span-2 md:col-span-3 xl:col-span-1"
         >
           <X className="h-3.5 w-3.5" aria-hidden />
           Reset

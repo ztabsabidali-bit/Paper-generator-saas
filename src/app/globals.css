@@ -107,6 +107,12 @@ body {
   }
 }
 
+@media (max-width: 480px) {
+  .paper-sheet {
+    padding: 1rem 0.9rem;
+  }
+}
+
 .paper-sheet .question-block {
   break-inside: avoid;
   page-break-inside: avoid;

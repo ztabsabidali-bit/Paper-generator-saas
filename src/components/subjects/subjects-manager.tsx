@@ -120,7 +120,7 @@ export function SubjectsManager({ catalog }: { catalog: SubjectWithTopics[] }) {
       {error ? <Alert tone="danger">{error}</Alert> : null}
       {notice ? <Alert tone="success">{notice}</Alert> : null}
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-4">
           {groups.length === 0 ? (
             <EmptyState
@@ -144,8 +144,8 @@ export function SubjectsManager({ catalog }: { catalog: SubjectWithTopics[] }) {
                   const chapters = groupChapters(subject);
                   return (
                     <Card key={subject.id}>
-                      <CardHeader className="flex items-center justify-between py-3">
-                        <div>
+                      <CardHeader className="flex flex-wrap items-center justify-between gap-2 py-3">
+                        <div className="min-w-0">
                           <CardTitle>{subject.subject_name}</CardTitle>
                           <p className="mt-0.5 text-[11px] text-slate-500">
                             {chapters.length} chapter(s) · {subject.topics.length} topic row(s)
@@ -154,6 +154,7 @@ export function SubjectsManager({ catalog }: { catalog: SubjectWithTopics[] }) {
                         <Button
                           variant="ghost"
                           size="sm"
+                          aria-label={`Delete ${subject.class_name} ${subject.subject_name}`}
                           onClick={() =>
                             removeSubject(
                               subject.id,
@@ -167,7 +168,7 @@ export function SubjectsManager({ catalog }: { catalog: SubjectWithTopics[] }) {
                           ) : (
                             <Trash2 className="h-3.5 w-3.5" aria-hidden />
                           )}
-                          Delete
+                          <span className="hidden sm:inline">Delete</span>
                         </Button>
                       </CardHeader>
                       <CardContent className="space-y-3">

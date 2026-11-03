@@ -38,7 +38,7 @@ export default async function PrintPaperPage({
         title={paper.title}
       />
 
-      <div className="mx-auto mt-6 max-w-5xl space-y-6 print:mt-0 print:max-w-none print:space-y-0">
+      <div className="mx-auto mt-4 max-w-5xl space-y-6 px-2 sm:mt-6 sm:px-4 print:mt-0 print:max-w-none print:space-y-0 print:px-0">
         <PaperDocument paper={paper} set={activeSet} institution={institution} />
         <AnswerKeyDocument paper={paper} set={activeSet} institution={institution} />
       </div>

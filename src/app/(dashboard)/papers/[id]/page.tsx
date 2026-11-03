@@ -85,12 +85,12 @@ export default async function PaperDetailPage({
             <span className="ml-2 text-[10px] text-slate-400">{set.items.length} Q</span>
           </Link>
         ))}
-        <Badge tone="neutral" className="ml-auto">
+        <Badge tone="neutral" className="sm:ml-auto">
           Seed {paper.seed}
         </Badge>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         <Card>
           <CardHeader>
             <CardTitle>
@@ -122,7 +122,7 @@ export default async function PaperDetailPage({
                               compact
                             />
                             {options.length > 0 ? (
-                              <div className="mt-2 grid gap-1.5 sm:grid-cols-2">
+                              <div className="mt-2 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
                                 {options.map((option) => (
                                   <div
                                     key={option.key}
@@ -154,7 +154,7 @@ export default async function PaperDetailPage({
           </CardContent>
         </Card>
 
-        <aside className="lg:sticky lg:top-20 lg:h-fit">
+        <aside className="xl:sticky xl:top-20 xl:h-fit">
           <Card>
             <CardHeader className="flex items-center gap-2">
               <KeyRound className="h-4 w-4 text-slate-400" aria-hidden />

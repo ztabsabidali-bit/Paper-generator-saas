@@ -124,7 +124,7 @@ export function UsersManager({
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+    <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
       <div className="space-y-4">
         {error ? <Alert tone="danger">{error}</Alert> : null}
         {notice ? <Alert tone="success">{notice}</Alert> : null}
@@ -157,12 +157,12 @@ export function UsersManager({
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex w-full items-center gap-2 sm:w-auto">
                     <Select
                       value={user.role}
                       onChange={(event) => changeRole(user.id, event.target.value as UserRole)}
                       disabled={!canTouch || (pending && busyId === user.id)}
-                      className="h-8 w-32 text-xs"
+                      className="h-8 min-w-0 flex-1 text-xs sm:w-32 sm:flex-none"
                       aria-label={`Role for ${user.email}`}
                     >
                       {(roles.includes(user.role) ? roles : [user.role, ...roles]).map((value) => (

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { FilePlus2, FileText, Printer } from "lucide-react";
 import { requireSession } from "@/lib/auth/guards";
-import { formatDate } from "@/lib/utils";
+import { formatDate, pluralize } from "@/lib/utils";
 import { listPapers } from "@/services/papers.service";
 import { Badge } from "@/components/ui/badge";
 import { buttonClasses } from "@/components/ui/button";
@@ -47,10 +47,10 @@ export default async function PapersPage() {
             <THead>
               <TR>
                 <TH className="w-[42%]">Paper</TH>
-                <TH>Class · Subject</TH>
-                <TH>Sets</TH>
-                <TH>Marks</TH>
-                <TH>Created</TH>
+                <TH className="hidden sm:table-cell">Class · Subject</TH>
+                <TH className="hidden sm:table-cell">Sets</TH>
+                <TH className="hidden lg:table-cell">Marks</TH>
+                <TH className="hidden lg:table-cell">Created</TH>
                 <TH className="text-right">Actions</TH>
               </TR>
             </THead>
@@ -67,16 +67,26 @@ export default async function PapersPage() {
                     <p className="mt-0.5 text-[11px] text-slate-500">
                       {paper.duration_minutes} minutes · {paper.exam_session ?? "No session"}
                     </p>
+                    <p className="mt-1 text-[11px] text-slate-500 sm:hidden">
+                      {paper.class_name || "—"}
+                      {paper.subject ? ` · ${paper.subject.subject_name}` : ""} ·{" "}
+                      {paper.set_count} {pluralize(paper.set_count, "set")} ·{" "}
+                      {paper.total_marks} marks · {formatDate(paper.created_at)}
+                    </p>
                   </TD>
-                  <TD className="text-xs text-slate-600">
+                  <TD className="hidden text-xs text-slate-600 sm:table-cell">
                     {paper.class_name || "—"}
                     {paper.subject ? ` · ${paper.subject.subject_name}` : ""}
                   </TD>
-                  <TD>
+                  <TD className="hidden sm:table-cell">
                     <Badge tone="brand">{paper.set_count}</Badge>
                   </TD>
-                  <TD className="text-xs text-slate-700">{paper.total_marks}</TD>
-                  <TD className="text-xs text-slate-500">{formatDate(paper.created_at)}</TD>
+                  <TD className="hidden text-xs text-slate-700 lg:table-cell">
+                    {paper.total_marks}
+                  </TD>
+                  <TD className="hidden text-xs text-slate-500 lg:table-cell">
+                    {formatDate(paper.created_at)}
+                  </TD>
                   <TD>
                     <div className="flex items-center justify-end gap-1">
                       <Link

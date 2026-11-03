@@ -209,7 +209,7 @@ export function PaperBuilder({
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+    <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
       <div className="space-y-6">
         {error ? <Alert tone="danger">{error}</Alert> : null}
 
@@ -235,7 +235,7 @@ export function PaperBuilder({
             <CardTitle>1 · Scope</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field label="Class" htmlFor="class">
                 <Select
                   id="class"
@@ -291,7 +291,7 @@ export function PaperBuilder({
                   </Link>
                 </p>
               ) : (
-                <div className="grid gap-2 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   {chapters.map((chapter) => {
                     const selected = selectedChapters.includes(chapter.chapterTitle);
                     return (
@@ -335,7 +335,7 @@ export function PaperBuilder({
         </Card>
 
         <Card>
-          <CardHeader className="flex items-center justify-between">
+          <CardHeader className="flex flex-wrap items-center justify-between gap-1">
             <CardTitle>2 · Blueprint</CardTitle>
             <span className="text-[11px] text-slate-500">
               Marks apply per question in every set
@@ -351,7 +351,7 @@ export function PaperBuilder({
                 <div
                   key={row.type}
                   className={cn(
-                    "grid items-center gap-2 rounded-lg border px-3 py-2.5 sm:grid-cols-[auto_1fr_5.5rem_5.5rem_7.5rem]",
+                    "grid grid-cols-1 items-center gap-2 rounded-lg border px-3 py-2.5 lg:grid-cols-[auto_1fr_5.5rem_5.5rem_7.5rem]",
                     row.enabled ? "border-slate-200 bg-white" : "border-slate-100 bg-slate-50/60",
                   )}
                 >
@@ -382,7 +382,9 @@ export function PaperBuilder({
                   </div>
 
                   <label className="flex items-center gap-1.5 text-[11px] text-slate-500">
-                    <span className="sr-only">Question count</span>
+                    <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 sm:sr-only">
+                      Count
+                    </span>
                     <Input
                       type="number"
                       min={0}
@@ -400,7 +402,9 @@ export function PaperBuilder({
                   </label>
 
                   <label className="flex items-center gap-1.5 text-[11px] text-slate-500">
-                    <span className="sr-only">Marks each</span>
+                    <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 sm:sr-only">
+                      Marks
+                    </span>
                     <Input
                       type="number"
                       min={0.5}
@@ -418,24 +422,29 @@ export function PaperBuilder({
                     />
                   </label>
 
-                  <Select
-                    value={row.difficulty}
-                    onChange={(event) =>
-                      updateRow(row.type, {
-                        difficulty: event.target.value as BlueprintRow["difficulty"],
-                      })
-                    }
-                    disabled={!row.enabled}
-                    className="h-8 text-xs"
-                    aria-label={`${meta.label} difficulty`}
-                  >
-                    <option value="mixed">Mixed</option>
-                    {Object.entries(DIFFICULTY_META).map(([value, item]) => (
-                      <option key={value} value={value}>
-                        {item.label}
-                      </option>
-                    ))}
-                  </Select>
+                  <label className="flex items-center gap-1.5 text-[11px] text-slate-500">
+                    <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 sm:sr-only">
+                      Level
+                    </span>
+                    <Select
+                      value={row.difficulty}
+                      onChange={(event) =>
+                        updateRow(row.type, {
+                          difficulty: event.target.value as BlueprintRow["difficulty"],
+                        })
+                      }
+                      disabled={!row.enabled}
+                      className="h-8 w-full text-xs"
+                      aria-label={`${meta.label} difficulty`}
+                    >
+                      <option value="mixed">Mixed</option>
+                      {Object.entries(DIFFICULTY_META).map(([value, item]) => (
+                        <option key={value} value={value}>
+                          {item.label}
+                        </option>
+                      ))}
+                    </Select>
+                  </label>
                 </div>
               );
             })}
@@ -473,7 +482,7 @@ export function PaperBuilder({
               />
             </Field>
 
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <Field label="Duration (minutes)" htmlFor="duration">
                 <Input
                   id="duration"
@@ -537,7 +546,7 @@ export function PaperBuilder({
         </Card>
       </div>
 
-      <aside className="lg:sticky lg:top-20 lg:h-fit">
+      <aside className="xl:sticky xl:top-20 xl:h-fit">
         <Card>
           <CardHeader>
             <CardTitle>Paper summary</CardTitle>

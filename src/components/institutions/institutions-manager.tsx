@@ -48,7 +48,7 @@ export function InstitutionsManager({ institutions }: { institutions: Institutio
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+    <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
       <div className="space-y-4">
         {error ? <Alert tone="danger">{error}</Alert> : null}
         {notice ? <Alert tone="success">{notice}</Alert> : null}
@@ -84,7 +84,7 @@ export function InstitutionsManager({ institutions }: { institutions: Institutio
                       Added {formatDate(institution.created_at)}
                     </p>
                   </div>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex w-full items-center gap-1.5 sm:w-auto">
                     <Link
                       href={`/users`}
                       className={buttonClasses("ghost", "sm")}

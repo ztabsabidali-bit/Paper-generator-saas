@@ -202,7 +202,7 @@ export function QuestionForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+    <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
       <div className="space-y-6">
         {serverError ? <Alert tone="danger">{serverError}</Alert> : null}
 
@@ -210,7 +210,7 @@ export function QuestionForm({
           <CardHeader>
             <CardTitle>Placement</CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-2">
+          <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Class" htmlFor="class" required>
               <Select
                 id="class"
@@ -292,7 +292,7 @@ export function QuestionForm({
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <Field label="Type" htmlFor="type">
                 <Select
                   id="type"
@@ -405,7 +405,7 @@ export function QuestionForm({
 
         {type === "mcq" ? (
           <Card>
-            <CardHeader className="flex items-center justify-between">
+            <CardHeader className="flex flex-wrap items-center justify-between gap-2">
               <CardTitle>Options</CardTitle>
               <span className="text-[11px] text-slate-500">
                 Click a label to mark the correct answer
@@ -544,7 +544,7 @@ export function QuestionForm({
         </div>
       </div>
 
-      <aside className="lg:sticky lg:top-20 lg:h-fit">
+      <aside className="xl:sticky xl:top-20 xl:h-fit">
         <Card>
           <CardHeader className="flex items-center gap-2">
             <Eye className="h-4 w-4 text-slate-400" aria-hidden />

@@ -80,7 +80,7 @@ export default async function DashboardPage({
         </span>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           label="Questions"
           value={questions.count ?? 0}
@@ -107,7 +107,7 @@ export default async function DashboardPage({
         />
       </div>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-3">
+      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader className="flex items-center justify-between">
             <CardTitle>Recent papers</CardTitle>
@@ -126,7 +126,7 @@ export default async function DashboardPage({
                   <li key={paper.id}>
                     <Link
                       href={`/papers/${paper.id}`}
-                      className="flex items-center justify-between gap-4 px-5 py-3.5 transition hover:bg-slate-50"
+                      className="flex items-center justify-between gap-4 px-4 py-3.5 transition hover:bg-slate-50 sm:px-5"
                     >
                       <div className="min-w-0">
                         <p className="truncate text-sm font-medium text-slate-900">

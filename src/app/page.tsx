@@ -78,7 +78,7 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <dl className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <dl className="mt-14 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {FEATURES.map((feature) => (
               <div
                 key={feature.title}
@@ -95,7 +95,7 @@ export default function LandingPage() {
         </section>
 
         <section className="border-y border-slate-100 bg-slate-50/70">
-          <div className="mx-auto grid w-full max-w-6xl gap-8 px-6 py-14 lg:grid-cols-2">
+          <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-8 px-6 py-14 lg:grid-cols-2">
             <div>
               <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
                 One blueprint. Every variant.

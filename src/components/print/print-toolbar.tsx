@@ -49,9 +49,15 @@ export function PrintToolbar({
           ))}
         </div>
 
-        <Button type="button" size="sm" onClick={() => window.print()}>
+        <Button
+          type="button"
+          size="sm"
+          onClick={() => window.print()}
+          className="order-last w-full sm:order-none sm:w-auto"
+        >
           <Printer className="h-3.5 w-3.5" aria-hidden />
-          Print / Save as PDF
+          <span className="hidden sm:inline">Print / Save as PDF</span>
+          <span className="sm:hidden">Print</span>
         </Button>
 
         <Link

@@ -126,9 +126,9 @@ export default async function QuestionsPage({
             <THead>
               <TR>
                 <TH className="w-[46%]">Question</TH>
-                <TH>Type</TH>
-                <TH>Marks</TH>
-                <TH>Placement</TH>
+                <TH className="hidden sm:table-cell">Type</TH>
+                <TH className="hidden sm:table-cell">Marks</TH>
+                <TH className="hidden lg:table-cell">Placement</TH>
                 <TH className="text-right">Actions</TH>
               </TR>
             </THead>
@@ -158,14 +158,21 @@ export default async function QuestionsPage({
                           <Badge tone="neutral">Mine</Badge>
                         ) : null}
                       </div>
+                      <p className="mt-1.5 text-[11px] text-slate-500 lg:hidden">
+                        {meta.short} · {question.marks}{" "}
+                        {pluralize(question.marks, "mark")}
+                        {question.topic
+                          ? ` · ${question.topic.chapter_title} · ${question.topic.subject?.class_name ?? ""} ${question.topic.subject?.subject_name ?? ""}`
+                          : ""}
+                      </p>
                     </TD>
-                    <TD>
+                    <TD className="hidden sm:table-cell">
                       <span className="text-xs font-medium text-slate-700">{meta.short}</span>
                     </TD>
-                    <TD>
+                    <TD className="hidden sm:table-cell">
                       <span className="text-xs text-slate-700">{question.marks}</span>
                     </TD>
-                    <TD className="text-xs text-slate-500">
+                    <TD className="hidden text-xs text-slate-500 lg:table-cell">
                       {question.topic ? (
                         <div className="space-y-0.5">
                           <p className="font-medium text-slate-700">
