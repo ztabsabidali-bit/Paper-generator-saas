@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { generatePaper, type GeneratorQuestion } from "./generator";
+import {
+  buildVariantsFromSelection,
+  generatePaper,
+  type GeneratorQuestion,
+  type SelectionPick,
+} from "./generator";
 
 function mcq(id: string, difficulty: "easy" | "medium" | "hard" = "medium"): GeneratorQuestion {
   return {
@@ -101,5 +106,120 @@ describe("generatePaper", () => {
       "easy-1",
       "easy-2",
     ]);
+  });
+});
+
+function pick(question: GeneratorQuestion): SelectionPick {
+  return {
+    id: question.id,
+    question_type: question.question_type,
+    difficulty: question.difficulty,
+    marks: question.marks,
+    options: question.options,
+  };
+}
+
+describe("buildVariantsFromSelection", () => {
+  const picks = [pick(mcq("m0")), pick(mcq("m1")), pick(short("s0"))];
+
+  it("prints the picked questions in type-section order for set A", () => {
+    const result = buildVariantsFromSelection({
+      picks: [pick(short("s0")), pick(mcq("m0")), pick(mcq("m1"))],
+      pool: picks,
+      setCount: 1,
+      shuffleOptions: false,
+      seed: 5,
+    });
+
+    const setA = result.sets[0];
+    expect(setA.items.map((item) => item.questionId)).toEqual(["m0", "m1", "s0"]);
+    expect(setA.items[0].section).toContain("Multiple choice");
+    expect(setA.items[2].section).toContain("Short question");
+    expect(result.totalMarks).toBe(1 + 1 + 3);
+    expect(result.warnings).toHaveLength(0);
+  });
+
+  it("swaps each slot for an unused same-type question in later sets", () => {
+    const pool = [
+      ...picks,
+      pick(mcq("m2")),
+      pick(mcq("m3")),
+      pick(short("s1")),
+      pick(short("s2")),
+      pick(short("s3")),
+    ];
+
+    const result = buildVariantsFromSelection({
+      picks,
+      pool,
+      setCount: 2,
+      shuffleOptions: false,
+      seed: 11,
+    });
+
+    const [setA, setB] = result.sets;
+    expect(setA.items.map((item) => item.questionId)).toEqual(["m0", "m1", "s0"]);
+    expect(setB.items).toHaveLength(3);
+    // Same structure and marks, no question reused from set A.
+    expect(setB.items.map((item) => item.section)).toEqual(
+      setA.items.map((item) => item.section),
+    );
+    expect(setB.totalMarks).toBe(setA.totalMarks);
+    expect(setB.items.some((item) => item.questionId === "s0")).toBe(false);
+    expect(setB.items.filter((item) => item.questionId === "m2" || item.questionId === "m3"))
+      .toHaveLength(2);
+    expect(result.warnings).toHaveLength(0);
+  });
+
+  it("keeps the slot marks even when the substitute is worth more", () => {
+    const cheap = { ...pick(mcq("m0")), marks: 1 };
+    const pricey = { ...pick(mcq("m1")), marks: 4 };
+
+    const result = buildVariantsFromSelection({
+      picks: [cheap],
+      pool: [cheap, pricey],
+      setCount: 2,
+      shuffleOptions: false,
+      seed: 2,
+    });
+
+    expect(result.sets[1].items[0].questionId).toBe("m1");
+    expect(result.sets[1].items[0].marks).toBe(1);
+    expect(result.totalMarks).toBe(1);
+  });
+
+  it("warns and repeats when the pool has no substitute left", () => {
+    const result = buildVariantsFromSelection({
+      picks: [pick(short("s0"))],
+      pool: [pick(short("s0"))],
+      setCount: 3,
+      shuffleOptions: false,
+      seed: 4,
+    });
+
+    expect(result.warnings.join(" ")).toContain("no unused substitute");
+    expect(result.sets[0].items[0].questionId).toBe("s0");
+    expect(result.sets[2].items[0].questionId).toBe("s0");
+  });
+
+  it("is reproducible for the same seed and pool", () => {
+    const pool = [
+      ...picks,
+      ...Array.from({ length: 8 }, (_, index) => pick(mcq(`pool-${index}`))),
+    ];
+    const input = {
+      picks,
+      pool,
+      setCount: 3,
+      shuffleOptions: true,
+      seed: 99,
+    };
+
+    const first = buildVariantsFromSelection(input);
+    const second = buildVariantsFromSelection({ ...input, pool: [...pool] });
+
+    expect(first.sets.map((set) => set.items.map((item) => item.questionId))).toEqual(
+      second.sets.map((set) => set.items.map((item) => item.questionId)),
+    );
   });
 });

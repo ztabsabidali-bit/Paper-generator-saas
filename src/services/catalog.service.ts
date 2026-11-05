@@ -19,11 +19,12 @@ function normalizeSubject(row: RawSubject): SubjectWithTopics {
   };
 }
 
-/** Whole catalogue: subjects with their chapter/topic tree. */
+/** Whole catalogue: subjects with their chapter/topic tree, optionally one institution. */
 export async function getCatalog(
   supabase: SupabaseServerClient,
+  institutionId?: string | null,
 ): Promise<SubjectWithTopics[]> {
-  const { data, error } = await supabase
+  let query = supabase
     .from("subjects")
     .select(
       "id, class_name, subject_name, topics(id, subject_id, chapter_title, topic_title, subtopic_title, chapter_order)",
@@ -31,6 +32,10 @@ export async function getCatalog(
     .order("class_name")
     .order("subject_name")
     .order("chapter_order", { referencedTable: "topics" });
+
+  if (institutionId) query = query.eq("institution_id", institutionId);
+
+  const { data, error } = await query;
 
   if (error) throw new Error(`Could not load the catalogue: ${error.message}`);
 

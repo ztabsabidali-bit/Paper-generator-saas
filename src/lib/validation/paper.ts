@@ -42,6 +42,35 @@ export const generatePaperSchema = z.object({
 
 export type GeneratePaperInput = z.infer<typeof generatePaperSchema>;
 
+export const selectableQuestionFilterSchema = z.object({
+  subject_id: z.uuid("Select a subject"),
+  chapter: z.string().trim().max(200).optional(),
+  topic: z.string().trim().max(200).optional(),
+  subtopic: z.string().trim().max(200).optional(),
+  type: questionTypeSchema.optional(),
+  difficulty: difficultySchema.optional(),
+  search: z.string().trim().max(200).optional(),
+});
+
+export type SelectableQuestionFilter = z.infer<typeof selectableQuestionFilterSchema>;
+
+export const manualSelectionSchema = z.object({
+  title: z.string().trim().min(3, "Give the paper a title").max(200),
+  class_name: z.string().trim().min(1, "Select a class"),
+  subject_id: z.uuid("Select a subject"),
+  question_ids: z.array(z.uuid()).min(1, "Select at least one question").max(300),
+  /** Questions currently visible in the picker, used for variant swaps. */
+  pool_ids: z.array(z.uuid()).max(300).optional(),
+  set_count: z.number().int().min(1).max(4),
+  shuffle_options: z.boolean(),
+  duration_minutes: z.number().int().min(15).max(300),
+  instructions: z.string().trim().max(2000).nullable().optional(),
+  exam_session: z.string().trim().max(50).nullable().optional(),
+  seed: z.number().int().nonnegative().optional(),
+});
+
+export type ManualSelectionInput = z.infer<typeof manualSelectionSchema>;
+
 export const poolCountRequestSchema = z.object({
   topic_ids: z.array(z.uuid()).min(1),
 });

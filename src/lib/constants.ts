@@ -90,6 +90,8 @@ export const QUESTION_FILTER_KEYS = [
   "class",
   "subject",
   "chapter",
+  "topic",
+  "subtopic",
   "type",
   "difficulty",
   "medium",

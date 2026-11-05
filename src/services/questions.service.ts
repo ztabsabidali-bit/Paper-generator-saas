@@ -1,6 +1,6 @@
 import type { SupabaseServerClient } from "@/lib/auth/session";
 import type { GeneratorQuestion } from "@/lib/papers/generator";
-import type { Difficulty, Medium, QuestionType } from "@/types/database";
+import type { Difficulty, Medium, QuestionType, TextDirection } from "@/types/database";
 import type {
   Question,
   QuestionOption,
@@ -190,6 +190,77 @@ export async function getPoolCounts(
   });
 
   return empty;
+}
+
+export interface SelectableQuestionFilters {
+  type?: QuestionType;
+  difficulty?: Difficulty;
+  search?: string;
+  limit?: number;
+}
+
+export interface SelectableQuestion {
+  id: string;
+  question_type: QuestionType;
+  difficulty: Difficulty;
+  marks: number;
+  question_text: string;
+  text_direction: TextDirection;
+  topic: {
+    id: string;
+    chapter_title: string;
+    topic_title: string | null;
+    subtopic_title: string | null;
+  } | null;
+}
+
+interface RawSelectableQuestion {
+  id: string;
+  question_type: QuestionType;
+  difficulty: Difficulty;
+  marks: number | string;
+  question_text: string;
+  text_direction: TextDirection;
+  topic?: SelectableQuestion["topic"] | SelectableQuestion["topic"][] | null;
+}
+
+/**
+ * Trimmed question rows for the manual paper picker. Only active questions are
+ * returned, and placement details come along so the list can be grouped.
+ */
+export async function getSelectableQuestions(
+  supabase: SupabaseServerClient,
+  topicIds: string[],
+  filters: SelectableQuestionFilters = {},
+): Promise<SelectableQuestion[]> {
+  if (topicIds.length === 0) return [];
+
+  let query = supabase
+    .from("questions")
+    .select(
+      "id, question_type, difficulty, marks, question_text, text_direction, topic:topics(id, chapter_title, topic_title, subtopic_title)",
+    )
+    .in("topic_id", topicIds)
+    .eq("is_active", true)
+    .order("created_at", { ascending: false })
+    .limit(filters.limit ?? 300);
+
+  if (filters.type) query = query.eq("question_type", filters.type);
+  if (filters.difficulty) query = query.eq("difficulty", filters.difficulty);
+  if (filters.search) query = query.ilike("question_text", `%${filters.search}%`);
+
+  const { data, error } = await query;
+  if (error) throw new Error(`Could not load questions: ${error.message}`);
+
+  return ((data ?? []) as unknown as RawSelectableQuestion[]).map((row) => ({
+    id: row.id,
+    question_type: row.question_type,
+    difficulty: row.difficulty,
+    marks: Number(row.marks),
+    question_text: row.question_text,
+    text_direction: row.text_direction,
+    topic: first(row.topic),
+  }));
 }
 
 export async function countQuestions(supabase: SupabaseServerClient) {

@@ -40,6 +40,8 @@ export default async function QuestionsPage({
     class: readParam(params, "class") || undefined,
     subject: readParam(params, "subject") || undefined,
     chapter: readParam(params, "chapter") || undefined,
+    topic: readParam(params, "topic") || undefined,
+    subtopic: readParam(params, "subtopic") || undefined,
     type: readParam(params, "type") || undefined,
     difficulty: readParam(params, "difficulty") || undefined,
     medium: readParam(params, "medium") || undefined,
@@ -54,13 +56,21 @@ export default async function QuestionsPage({
   );
 
   let topicIds: string[] | undefined;
-  if (filters.class || filters.subject || filters.chapter) {
+  if (
+    filters.class ||
+    filters.subject ||
+    filters.chapter ||
+    filters.topic ||
+    filters.subtopic
+  ) {
     topicIds = topicRows
       .filter(
         ({ subject, topic }) =>
           (!filters.class || subject.class_name === filters.class) &&
           (!filters.subject || subject.id === filters.subject) &&
-          (!filters.chapter || topic.chapter_title === filters.chapter),
+          (!filters.chapter || topic.chapter_title === filters.chapter) &&
+          (!filters.topic || topic.topic_title === filters.topic) &&
+          (!filters.subtopic || topic.subtopic_title === filters.subtopic),
       )
       .map(({ topic }) => topic.id);
   }
@@ -77,7 +87,11 @@ export default async function QuestionsPage({
     id: subject.id,
     className: subject.class_name,
     subjectName: subject.subject_name,
-    chapters: [...new Set(subject.topics.map((topic) => topic.chapter_title))],
+    topics: subject.topics.map((topic) => ({
+      chapter: topic.chapter_title,
+      topic: topic.topic_title,
+      subtopic: topic.subtopic_title,
+    })),
   }));
 
   return (

@@ -182,18 +182,7 @@ export function PaperDocument({
                               </div>
                             ))}
                           </div>
-                        ) : (
-                          <div className="mt-1.5 space-y-1">
-                            {Array.from({ length: question.question_type === "long" ? 4 : 2 }).map(
-                              (_, index) => (
-                                <div
-                                  key={index}
-                                  className="h-3 border-b border-dotted border-slate-300"
-                                />
-                              ),
-                            )}
-                          </div>
-                        )}
+                        ) : null}
                       </div>
                       <span className="w-7 shrink-0 text-right text-[10px] text-slate-500">
                         ({marks})

@@ -65,6 +65,8 @@ export const questionFilterSchema = z.object({
   class: z.string().optional(),
   subject: z.string().optional(),
   chapter: z.string().optional(),
+  topic: z.string().optional(),
+  subtopic: z.string().optional(),
   type: questionTypeSchema.optional(),
   difficulty: difficultySchema.optional(),
   medium: mediumSchema.optional(),
