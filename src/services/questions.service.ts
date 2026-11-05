@@ -1,6 +1,6 @@
 import type { SupabaseServerClient } from "@/lib/auth/session";
 import type { GeneratorQuestion } from "@/lib/papers/generator";
-import type { Difficulty, Medium, QuestionType, TextDirection } from "@/types/database";
+import type { Difficulty, Json, Medium, QuestionType, TextDirection } from "@/types/database";
 import type {
   Question,
   QuestionOption,
@@ -268,4 +268,72 @@ export async function countQuestions(supabase: SupabaseServerClient) {
     .from("questions")
     .select("id", { count: "exact", head: true });
   return count ?? 0;
+}
+
+export interface SubjectTopicRow {
+  id: string;
+  chapter_title: string;
+  topic_title: string | null;
+  subtopic_title: string | null;
+  chapter_order: number;
+}
+
+/** Placement rows used to resolve CSV chapter/topic columns. */
+export async function getSubjectTopics(
+  supabase: SupabaseServerClient,
+  subjectId: string,
+): Promise<SubjectTopicRow[]> {
+  const { data, error } = await supabase
+    .from("topics")
+    .select("id, chapter_title, topic_title, subtopic_title, chapter_order")
+    .eq("subject_id", subjectId);
+
+  if (error) throw new Error(`Could not load chapters: ${error.message}`);
+  return (data ?? []) as SubjectTopicRow[];
+}
+
+/** Existing question text for duplicate detection during an import. */
+export async function getQuestionTextsByTopic(
+  supabase: SupabaseServerClient,
+  topicIds: string[],
+): Promise<string[]> {
+  if (topicIds.length === 0) return [];
+
+  const { data, error } = await supabase
+    .from("questions")
+    .select("question_text")
+    .in("topic_id", topicIds)
+    .limit(5000);
+
+  if (error) throw new Error(`Could not check for duplicates: ${error.message}`);
+  return ((data ?? []) as Array<{ question_text: string }>).map((row) => row.question_text);
+}
+
+export interface NewQuestionRow {
+  topic_id: string;
+  question_type: QuestionType;
+  question_text: string;
+  options: QuestionOption[] | null;
+  correct_answer: string | null;
+  medium: Medium;
+  difficulty: Difficulty;
+  marks: number;
+  text_direction: TextDirection;
+  explanation: string | null;
+  created_by: string;
+  institution_id: string;
+}
+
+/** One uniform batch insert; the caller decides how to recover from errors. */
+export async function insertQuestionRows(
+  supabase: SupabaseServerClient,
+  rows: NewQuestionRow[],
+): Promise<{ inserted: number; error: string | null }> {
+  if (rows.length === 0) return { inserted: 0, error: null };
+
+  const { error } = await supabase.from("questions").insert(
+    rows.map((row) => ({ ...row, options: row.options as Json })),
+  );
+  if (error) return { inserted: 0, error: error.message };
+  return { inserted: rows.length, error: null };
 }

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LibraryBig, Plus } from "lucide-react";
+import { LibraryBig, Plus, Upload } from "lucide-react";
 import { requireSession } from "@/lib/auth/guards";
 import { canManageBank } from "@/lib/rbac";
 import {
@@ -106,6 +106,10 @@ export default async function QuestionsPage({
                 Manage subjects
               </Link>
             ) : null}
+            <Link href="/questions/import" className={buttonClasses("outline", "md")}>
+              <Upload className="h-4 w-4" aria-hidden />
+              Import CSV
+            </Link>
             <Link href="/questions/new" className={buttonClasses("primary", "md")}>
               <Plus className="h-4 w-4" aria-hidden />
               New question

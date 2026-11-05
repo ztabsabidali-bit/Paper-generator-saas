@@ -1,0 +1,4 @@
+﻿chapter,topic,subtopic,type,question_text,option_a,option_b,option_c,option_d,correct_answer,difficulty,marks,medium,direction,explanation
+Chapter 1: Quadratic Equations,Solving by factorisation,,mcq,The roots of x^2 - 5x + 6 = 0 are…,2 and 3,-2 and -3,1 and 6,-1 and -6,A,easy,1,english,ltr,Factorise as (x - 2)(x - 3) = 0.
+Chapter 1: Quadratic Equations,Solving by factorisation,,short,Solve x^2 - 7x + 12 = 0 by factorisation.,,,,,,medium,3,english,ltr,"x^2 - 7x + 12 = (x - 3)(x - 4), so x = 3 or x = 4."
+Chapter 1: Quadratic Equations,The quadratic formula,,long,"Derive the quadratic formula from ax^2 + bx + c = 0 and use it to solve 2x^2 + 5x - 3 = 0.",,,,,,hard,8,english,ltr,"Complete the square on ax^2 + bx + c, then substitute a = 2, b = 5, c = -3."
