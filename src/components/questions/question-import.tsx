@@ -8,6 +8,7 @@ import {
   ArrowRight,
   Download,
   FileSpreadsheet,
+  FileText,
   Loader2,
   RotateCcw,
   Upload,
@@ -356,14 +357,24 @@ export function QuestionImport({
       <Card>
         <CardHeader className="flex flex-wrap items-center justify-between gap-2">
           <CardTitle>2 · Upload the CSV</CardTitle>
-          <a
-            href="/templates/questions-template.csv"
-            download
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-brand-700 hover:text-brand-800"
-          >
-            <Download className="h-3.5 w-3.5" aria-hidden />
-            Download template
-          </a>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+            <a
+              href="/templates/questions-template.csv"
+              download
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-brand-700 hover:text-brand-800"
+            >
+              <Download className="h-3.5 w-3.5" aria-hidden />
+              Download template
+            </a>
+            <a
+              href="/templates/ai-import-brief.md"
+              download
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-600 hover:text-slate-900"
+            >
+              <FileText className="h-3.5 w-3.5" aria-hidden />
+              AI agent brief
+            </a>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <label
