@@ -5,6 +5,14 @@ const nextConfig: NextConfig = {
   // Cloudflare image optimisation needs an `images` binding. Keep `next/image`
   // working out of the box by serving the original files instead.
   images: { unoptimized: true },
+  experimental: {
+    serverActions: {
+      // CSV imports accept files up to 2 MB. The rows travel as JSON, where
+      // quoting and escaping can roughly double the payload, so leave headroom
+      // above the file cap instead of failing at Next's 1 MB default.
+      bodySizeLimit: "5mb",
+    },
+  },
 };
 
 export default nextConfig;

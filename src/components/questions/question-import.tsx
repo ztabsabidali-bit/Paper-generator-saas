@@ -250,6 +250,13 @@ export function QuestionImport({
       if (fileRef.current) fileRef.current.value = "";
       // Pick up chapters created by this import in the preview of the next file.
       router.refresh();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      setServerError(
+        /body|payload|size|too large|413/i.test(message)
+          ? "That file is too large to send in one request. Split it into smaller CSV files and import each one."
+          : "The import could not be completed. Check your connection and try again.",
+      );
     } finally {
       setPending(false);
     }

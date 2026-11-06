@@ -15,16 +15,17 @@ export default async function PrintPaperPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ set?: string }>;
+  searchParams: Promise<{ set?: string; key?: string }>;
 }) {
   const { id } = await params;
-  const { set: requestedSet } = await searchParams;
+  const { set: requestedSet, key: requestedKey } = await searchParams;
   const { supabase } = await requireSession(`/papers/${id}/print`);
 
   const paper = await getPaperWithSets(supabase, id);
   if (!paper || paper.sets.length === 0) notFound();
 
   const institution = await getInstitution(supabase, paper.institution_id);
+  const includeAnswerKey = requestedKey !== "0";
 
   const activeSet =
     paper.sets.find((set) => set.set_label === requestedSet) ?? paper.sets[0];
@@ -36,11 +37,14 @@ export default async function PrintPaperPage({
         sets={paper.sets.map((set) => set.set_label)}
         activeSet={activeSet.set_label}
         title={paper.title}
+        includeAnswerKey={includeAnswerKey}
       />
 
       <div className="mx-auto mt-4 max-w-5xl space-y-6 px-2 sm:mt-6 sm:px-4 print:mt-0 print:max-w-none print:space-y-0 print:px-0">
         <PaperDocument paper={paper} set={activeSet} institution={institution} />
-        <AnswerKeyDocument paper={paper} set={activeSet} institution={institution} />
+        {includeAnswerKey ? (
+          <AnswerKeyDocument paper={paper} set={activeSet} institution={institution} />
+        ) : null}
       </div>
     </div>
   );
