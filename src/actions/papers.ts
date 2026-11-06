@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { actionError, actionOk, describeError, type ActionResult } from "@/lib/action-result";
 import { getSessionContext } from "@/lib/auth/session";
 import { createSeed } from "@/lib/papers/prng";
+import { resolvePrintOptions } from "@/lib/papers/print-options";
 import {
   buildVariantsFromSelection,
   generatePaper,
@@ -102,6 +103,7 @@ export async function generatePaperAction(
       instructions: values.instructions ?? null,
       duration_minutes: values.duration_minutes,
       exam_session: values.exam_session ?? null,
+      print_options: resolvePrintOptions(values.print_options),
       seed,
       total_marks: result.totalMarks,
       sets: result.sets,
@@ -285,6 +287,7 @@ export async function createPaperFromSelectionAction(
       instructions: values.instructions ?? null,
       duration_minutes: values.duration_minutes,
       exam_session: values.exam_session ?? null,
+      print_options: resolvePrintOptions(values.print_options),
       seed,
       total_marks: result.totalMarks,
       sets: result.sets,

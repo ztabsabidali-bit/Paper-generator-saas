@@ -21,6 +21,16 @@ export const blueprintRowSchema = z
 
 export type BlueprintRow = z.infer<typeof blueprintRowSchema>;
 
+export const paperPrintOptionsSchema = z.object({
+  title: z.boolean(),
+  session: z.boolean(),
+  duration: z.boolean(),
+  set_label: z.boolean(),
+  instructions: z.boolean(),
+});
+
+export type PaperPrintOptionsInput = z.infer<typeof paperPrintOptionsSchema>;
+
 export const generatePaperSchema = z.object({
   title: z.string().trim().min(3, "Give the paper a title").max(200),
   class_name: z.string().trim().min(1, "Select a class"),
@@ -37,6 +47,7 @@ export const generatePaperSchema = z.object({
   duration_minutes: z.number().int().min(15).max(300),
   instructions: z.string().trim().max(2000).nullable().optional(),
   exam_session: z.string().trim().max(50).nullable().optional(),
+  print_options: paperPrintOptionsSchema.optional(),
   seed: z.number().int().nonnegative().optional(),
 });
 
@@ -66,6 +77,7 @@ export const manualSelectionSchema = z.object({
   duration_minutes: z.number().int().min(15).max(300),
   instructions: z.string().trim().max(2000).nullable().optional(),
   exam_session: z.string().trim().max(50).nullable().optional(),
+  print_options: paperPrintOptionsSchema.optional(),
   seed: z.number().int().nonnegative().optional(),
 });
 

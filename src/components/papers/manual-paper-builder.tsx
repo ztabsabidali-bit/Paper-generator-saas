@@ -26,11 +26,12 @@ import { Input, Select } from "@/components/ui/field";
 import { Alert } from "@/components/ui/shell";
 import { DIFFICULTY_META, QUESTION_TYPE_META, SET_LABELS } from "@/lib/constants";
 import { defaultPaperTitle } from "@/lib/papers/labels";
+import { DEFAULT_PRINT_OPTIONS, type PrintOptionKey } from "@/lib/papers/print-options";
 import { cn, pluralize } from "@/lib/utils";
 import { PaperDetailsFields } from "./paper-details-fields";
 import { PaperScopeFields } from "./paper-scope-fields";
 import type { QuestionType } from "@/types/database";
-import type { SubjectWithTopics } from "@/types/domain";
+import type { PaperPrintOptions, SubjectWithTopics } from "@/types/domain";
 import type { SelectableQuestion } from "@/services/questions.service";
 
 const SECTION_ORDER: QuestionType[] = ["mcq", "short", "long"];
@@ -57,6 +58,13 @@ export function ManualPaperBuilder({
   const [setCount, setSetCount] = useState(1);
   const [shuffleOptions, setShuffleOptions] = useState(true);
   const [instructions, setInstructions] = useState(defaultInstructions);
+  const [printOptions, setPrintOptions] = useState<PaperPrintOptions>(() => ({
+    ...DEFAULT_PRINT_OPTIONS,
+  }));
+
+  function updatePrintOption(key: PrintOptionKey, value: boolean) {
+    setPrintOptions((current) => ({ ...current, [key]: value }));
+  }
 
   const [chapter, setChapter] = useState("");
   const [topic, setTopic] = useState("");
@@ -257,6 +265,7 @@ export function ManualPaperBuilder({
         duration_minutes: duration,
         instructions: instructions.trim() || null,
         exam_session: session.trim() || null,
+        print_options: printOptions,
       });
 
       if (!result.ok) {
@@ -504,6 +513,8 @@ export function ManualPaperBuilder({
           onInstructionsChange={setInstructions}
           shuffleOptions={shuffleOptions}
           onShuffleOptionsChange={setShuffleOptions}
+          printOptions={printOptions}
+          onPrintOptionChange={updatePrintOption}
         />
       </div>
 

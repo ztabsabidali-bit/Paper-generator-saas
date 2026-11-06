@@ -1,4 +1,5 @@
 import { correctOptionLabel, resolveOptions } from "@/lib/papers/answer-key";
+import { resolvePrintOptions } from "@/lib/papers/print-options";
 import { MathText } from "@/components/questions/math-text";
 import type {
   InstitutionSettings,
@@ -31,7 +32,13 @@ export function PaperDocument({
   institution: InstitutionSettings;
 }) {
   const sections = groupSections(set.items);
+  const options = resolvePrintOptions(paper.print_options);
   let questionNumber = 0;
+
+  const footerParts = [
+    options.set_label ? `Set ${set.set_label}` : null,
+    options.title ? paper.title : null,
+  ].filter((part): part is string => Boolean(part));
 
   return (
     <article className="paper-sheet">
@@ -62,21 +69,29 @@ export function PaperDocument({
             ) : null}
           </div>
 
-          <div className="w-12 shrink-0 text-right sm:w-16">
-            <p className="text-[10px] uppercase tracking-wide text-slate-500">Set</p>
-            <p className="text-xl font-bold leading-none text-slate-900 sm:text-2xl">
-              {set.set_label}
-            </p>
-          </div>
+          {options.set_label ? (
+            <div className="w-12 shrink-0 text-right sm:w-16">
+              <p className="text-[10px] uppercase tracking-wide text-slate-500">Set</p>
+              <p className="text-xl font-bold leading-none text-slate-900 sm:text-2xl">
+                {set.set_label}
+              </p>
+            </div>
+          ) : (
+            <div className="w-12 shrink-0 sm:w-16" aria-hidden />
+          )}
         </div>
       </header>
 
-      <div className="mt-3 text-center">
-        <h2 className="text-sm font-semibold text-slate-900">{paper.title}</h2>
-        {paper.exam_session ? (
-          <p className="text-[11px] text-slate-600">Session {paper.exam_session}</p>
-        ) : null}
-      </div>
+      {options.title || (options.session && paper.exam_session) ? (
+        <div className="mt-3 text-center">
+          {options.title ? (
+            <h2 className="text-sm font-semibold text-slate-900">{paper.title}</h2>
+          ) : null}
+          {options.session && paper.exam_session ? (
+            <p className="text-[11px] text-slate-600">Session {paper.exam_session}</p>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="mt-3 grid grid-cols-2 gap-2 border-y border-slate-200 py-2 text-[11px] text-slate-700 sm:grid-cols-4 print:grid-cols-4">
         <div>
@@ -87,10 +102,12 @@ export function PaperDocument({
           <span className="text-slate-500">Subject: </span>
           {paper.subject?.subject_name ?? "—"}
         </div>
-        <div>
-          <span className="text-slate-500">Time: </span>
-          {paper.duration_minutes} min
-        </div>
+        {options.duration ? (
+          <div>
+            <span className="text-slate-500">Time: </span>
+            {paper.duration_minutes} min
+          </div>
+        ) : null}
         <div>
           <span className="text-slate-500">Total marks: </span>
           {paper.total_marks}
@@ -112,7 +129,7 @@ export function PaperDocument({
         </div>
       </div>
 
-      {paper.instructions ? (
+      {options.instructions && paper.instructions ? (
         <div className="mt-3 rounded border border-slate-200 bg-slate-50 px-3 py-2">
           <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
             Instructions
@@ -198,9 +215,7 @@ export function PaperDocument({
 
       <footer className="mt-6 flex flex-wrap items-center justify-between gap-1 border-t border-slate-200 pt-2 text-[9px] text-slate-500">
         <span>{institution.footer_note ?? ""}</span>
-        <span>
-          Set {set.set_label} · {paper.title}
-        </span>
+        {footerParts.length > 0 ? <span>{footerParts.join(" · ")}</span> : null}
       </footer>
     </article>
   );

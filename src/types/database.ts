@@ -214,6 +214,7 @@ export interface Database {
           exam_session: string | null;
           seed: number;
           status: string;
+          print_options: Json;
         };
         Insert: {
           id?: string;
@@ -230,6 +231,7 @@ export interface Database {
           exam_session?: string | null;
           seed?: number;
           status?: string;
+          print_options?: Json;
         };
         Update: {
           id?: string;
@@ -246,6 +248,7 @@ export interface Database {
           exam_session?: string | null;
           seed?: number;
           status?: string;
+          print_options?: Json;
         };
         Relationships: [];
       };

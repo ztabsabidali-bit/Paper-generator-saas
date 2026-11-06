@@ -13,11 +13,12 @@ import { Alert } from "@/components/ui/shell";
 import { groupChapters } from "@/lib/catalog";
 import { DIFFICULTY_META, QUESTION_TYPE_META } from "@/lib/constants";
 import { defaultPaperTitle } from "@/lib/papers/labels";
+import { DEFAULT_PRINT_OPTIONS, type PrintOptionKey } from "@/lib/papers/print-options";
 import { cn, pluralize } from "@/lib/utils";
 import { PaperDetailsFields } from "./paper-details-fields";
 import { PaperScopeFields } from "./paper-scope-fields";
 import type { QuestionType } from "@/types/database";
-import type { SubjectWithTopics } from "@/types/domain";
+import type { PaperPrintOptions, SubjectWithTopics } from "@/types/domain";
 import type { BlueprintRow } from "@/lib/validation/paper";
 import type { PoolCounts } from "@/services/questions.service";
 
@@ -56,6 +57,13 @@ export function AutoPaperBuilder({
   const [duration, setDuration] = useState(120);
   const [session, setSession] = useState(defaultSession);
   const [instructions, setInstructions] = useState(defaultInstructions);
+  const [printOptions, setPrintOptions] = useState<PaperPrintOptions>(() => ({
+    ...DEFAULT_PRINT_OPTIONS,
+  }));
+
+  function updatePrintOption(key: PrintOptionKey, value: boolean) {
+    setPrintOptions((current) => ({ ...current, [key]: value }));
+  }
 
   const [counts, setCounts] = useState<PoolCounts | null>(null);
   const [countsLoading, setCountsLoading] = useState(false);
@@ -157,6 +165,7 @@ export function AutoPaperBuilder({
         duration_minutes: duration,
         instructions: instructions.trim() || null,
         exam_session: session.trim() || null,
+        print_options: printOptions,
       });
 
       if (!result.ok) {
@@ -426,6 +435,8 @@ export function AutoPaperBuilder({
           onInstructionsChange={setInstructions}
           shuffleOptions={shuffleOptions}
           onShuffleOptionsChange={setShuffleOptions}
+          printOptions={printOptions}
+          onPrintOptionChange={updatePrintOption}
         />
       </div>
 

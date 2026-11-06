@@ -1,7 +1,10 @@
 import type { SupabaseServerClient } from "@/lib/auth/session";
+import { resolvePrintOptions } from "@/lib/papers/print-options";
 import type { GeneratedSet } from "@/lib/papers/generator";
+import type { Json } from "@/types/database";
 import type {
   Paper,
+  PaperPrintOptions,
   PaperQuestionRow,
   PaperSet,
   PaperWithSets,
@@ -22,6 +25,7 @@ export interface CreatePaperPayload {
   instructions: string | null;
   duration_minutes: number;
   exam_session: string | null;
+  print_options: PaperPrintOptions;
   seed: number;
   total_marks: number;
   sets: GeneratedSet[];
@@ -47,6 +51,7 @@ export async function listPapers(
     Paper & { subject: Subject | Subject[] | null; sets: Array<{ id: string }> }
   >).map((row) => ({
     ...row,
+    print_options: resolvePrintOptions(row.print_options),
     subject: first(row.subject),
     set_count: row.sets?.length ?? 0,
   }));
@@ -72,6 +77,7 @@ export async function createPaper(
       instructions: payload.instructions,
       duration_minutes: payload.duration_minutes,
       exam_session: payload.exam_session,
+      print_options: payload.print_options as unknown as Json,
       seed: payload.seed,
       status: "final",
     })
@@ -177,6 +183,7 @@ export async function getPaperWithSets(
 
   return {
     ...paper,
+    print_options: resolvePrintOptions(paper.print_options),
     subject: first(paper.subject),
     sets: sets.map((set) => ({
       ...set,

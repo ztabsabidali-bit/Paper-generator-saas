@@ -48,6 +48,14 @@ export interface QuestionWithTopic extends Question {
   topic: (Topic & { subject: Subject | null }) | null;
 }
 
+export interface PaperPrintOptions {
+  title: boolean;
+  session: boolean;
+  duration: boolean;
+  set_label: boolean;
+  instructions: boolean;
+}
+
 export interface Paper {
   id: string;
   title: string;
@@ -63,6 +71,7 @@ export interface Paper {
   exam_session: string | null;
   seed: number;
   status: string;
+  print_options: PaperPrintOptions;
 }
 
 export interface PaperSet {

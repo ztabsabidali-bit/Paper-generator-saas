@@ -22,7 +22,7 @@ export function Select({ className, children, ...props }: React.ComponentProps<"
 export function Label({ className, ...props }: React.ComponentProps<"label">) {
   return (
     <label
-      className={cn("mb-1.5 block text-xs font-medium text-slate-700", className)}
+      className={cn("block text-xs font-medium text-slate-700", className)}
       {...props}
     />
   );
@@ -33,18 +33,32 @@ interface FieldProps {
   htmlFor?: string;
   hint?: string;
   error?: string;
+  /** Optional control rendered opposite the label, e.g. a print toggle. */
+  action?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
   required?: boolean;
 }
 
-export function Field({ label, htmlFor, hint, error, children, className, required }: FieldProps) {
+export function Field({
+  label,
+  htmlFor,
+  hint,
+  error,
+  action,
+  children,
+  className,
+  required,
+}: FieldProps) {
   return (
     <div className={className}>
-      <Label htmlFor={htmlFor}>
-        {label}
-        {required ? <span className="ml-0.5 text-rose-500">*</span> : null}
-      </Label>
+      <div className="mb-1.5 flex items-center justify-between gap-2">
+        <Label htmlFor={htmlFor}>
+          {label}
+          {required ? <span className="ml-0.5 text-rose-500">*</span> : null}
+        </Label>
+        {action}
+      </div>
       {children}
       {hint && !error ? <p className="mt-1 text-xs text-slate-500">{hint}</p> : null}
       {error ? <p className="mt-1 text-xs text-rose-600">{error}</p> : null}
