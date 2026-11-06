@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { LibraryBig, Plus, Upload } from "lucide-react";
 import { requireSession } from "@/lib/auth/guards";
-import { canManageBank } from "@/lib/rbac";
+import { canEditQuestion, canManageBank } from "@/lib/rbac";
 import {
   questionFilterSchema,
   type QuestionFilters as QuestionFilterValues,
@@ -9,6 +9,7 @@ import {
 import { getCatalog } from "@/services/catalog.service";
 import { listQuestions } from "@/services/questions.service";
 import { ArchiveQuestionButton } from "@/components/questions/archive-question-button";
+import { DeleteQuestionButton } from "@/components/questions/delete-question-button";
 import { MathText } from "@/components/questions/math-text";
 import { QuestionFilters } from "@/components/questions/question-filters";
 import { Badge } from "@/components/ui/badge";
@@ -216,6 +217,13 @@ export default async function QuestionsPage({
                         {question.is_active ? (
                           <ArchiveQuestionButton id={question.id} />
                         ) : null}
+                        {canEditQuestion(
+                          profile.role,
+                          profile.id,
+                          question.created_by,
+                        ) ? (
+                          <DeleteQuestionButton id={question.id} />
+                        ) : null}
                       </div>
                     </TD>
                   </TR>
@@ -228,6 +236,7 @@ export default async function QuestionsPage({
 
       <p className="mt-3 text-[11px] text-slate-500">
         Showing up to 200 questions. Archived questions remain in papers that already use them.
+        Deleting is permanent; questions used in a paper must be archived instead.
       </p>
     </>
   );

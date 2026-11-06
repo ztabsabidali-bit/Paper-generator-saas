@@ -102,3 +102,42 @@ export async function archiveQuestionAction(id: string): Promise<ActionResult<nu
   revalidatePath("/questions");
   return actionOk(null);
 }
+
+export async function deleteQuestionAction(id: string): Promise<ActionResult<null>> {
+  const context = await getSessionContext();
+  if (!context) return actionError("Your session has expired. Sign in again.");
+
+  const { supabase, profile } = context;
+  const existing = await getQuestionById(supabase, id);
+  if (!existing) return actionError("That question no longer exists.");
+  if (!canEditQuestion(profile.role, profile.id, existing.created_by)) {
+    return actionError("You can only delete questions you created.");
+  }
+
+  const { count, error: countError } = await supabase
+    .from("paper_questions")
+    .select("id", { count: "exact", head: true })
+    .eq("question_id", id);
+
+  if (countError) return actionError(countError.message);
+  if ((count ?? 0) > 0) {
+    return actionError(
+      `This question is used in ${count} paper ${count === 1 ? "set" : "sets"}. Archive it instead so those papers keep their layout.`,
+    );
+  }
+
+  const { error } = await supabase.from("questions").delete().eq("id", id);
+
+  if (error) {
+    if (error.code === "23503") {
+      return actionError(
+        "This question is used in a paper. Archive it instead so the paper keeps its layout.",
+      );
+    }
+    return actionError(error.message);
+  }
+
+  revalidatePath("/questions");
+  revalidatePath("/dashboard");
+  return actionOk(null);
+}

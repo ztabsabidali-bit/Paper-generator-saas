@@ -1,6 +1,7 @@
 import ReactMarkdown from "react-markdown";
 import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
+import { normalizeMathText } from "@/lib/math/normalize";
 import { cn } from "@/lib/utils";
 import type { TextDirection } from "@/types/database";
 
@@ -34,7 +35,7 @@ export function MathText({
       )}
     >
       <ReactMarkdown remarkPlugins={REMARK_PLUGINS} rehypePlugins={REHYPE_PLUGINS}>
-        {content}
+        {normalizeMathText(content)}
       </ReactMarkdown>
     </div>
   );

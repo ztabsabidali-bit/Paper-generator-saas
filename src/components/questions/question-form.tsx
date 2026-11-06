@@ -24,6 +24,7 @@ const SNIPPETS = [
   { label: "x²", title: "Power", value: "$x^{2}$" },
   { label: "a⁄b", title: "Fraction", value: "$\\frac{a}{b}$" },
   { label: "√", title: "Square root", value: "$\\sqrt{x}$" },
+  { label: "⁴√", title: "Fourth root", value: "$\\sqrt[4]{x}$" },
   { label: "∑", title: "Summation", value: "$\\sum_{i=1}^{n} i$" },
   { label: "∫", title: "Integral", value: "$\\int_{a}^{b} f(x)\\,dx$" },
   { label: "Block", title: "Display math", value: "$$\n\n$$" },

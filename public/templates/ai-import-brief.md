@@ -16,7 +16,10 @@ subject. Every row in a file belongs to that subject.
   The subject is chosen in the app.
 - Quote any field containing a comma, double quote or newline.
 - Escape an inner double quote by doubling it (`""`).
-- Keep LaTeX inline, for example `x^2 - 5x + 6 = 0`.
+- Wrap **every** expression in `$…$` (inline maths). For example
+  `$x^2 - 5x + 6 = 0$`, `$\sqrt{3} + \sqrt{5}$` and
+  `$\sqrt[4]{16x^4y^8}$`. Never leave bare `x^2` or `\sqrt{...}` outside
+  `$…$`; the app renders only what is inside dollar signs.
 - Maximum 500 rows and 2 MB per file.
 - Do not emit duplicate questions. Duplicates already in the subject are
   skipped automatically.
@@ -31,10 +34,10 @@ chapter,topic,subtopic,type,question_text,option_a,option_b,option_c,option_d,co
 
 ```csv
 chapter,topic,subtopic,type,question_text,option_a,option_b,option_c,option_d,correct_answer,difficulty,marks,medium,direction,explanation
-Chapter 1: Quadratic Equations,Solving by factorisation,,mcq,"The roots of x^2 - 5x + 6 = 0 are:","2 and 3","-2 and -3","1 and 6","-1 and -6",A,easy,1,english,ltr,"Factorise as (x - 2)(x - 3) = 0."
-Chapter 1: Quadratic Equations,Solving by factorisation,,short,"Solve x^2 - 7x + 12 = 0 by factorisation.",,,,,,medium,3,english,ltr,"x^2 - 7x + 12 = (x - 3)(x - 4), so x = 3 or x = 4."
-Chapter 1: Quadratic Equations,The quadratic formula,,long,"Derive the quadratic formula from ax^2 + bx + c = 0, then use it to solve 2x^2 + 5x - 3 = 0.",,,,,,hard,8,english,ltr,"Complete the square on ax^2 + bx + c, then substitute a = 2, b = 5 and c = -3."
-Chapter 2: Matrices,Types of matrices,,mcq,"Which matrix has every element equal to zero?",Zero matrix,Identity matrix,Diagonal matrix,Row matrix,A,easy,1,english,ltr,"A zero matrix has all entries equal to 0."
+Chapter 1: Quadratic Equations,Solving by factorisation,,mcq,"The roots of $x^2 - 5x + 6 = 0$ are:","2 and 3","-2 and -3","1 and 6","-1 and -6",A,easy,1,english,ltr,"Factorise as $(x - 2)(x - 3) = 0$."
+Chapter 1: Quadratic Equations,Solving by factorisation,,short,"Solve $x^2 - 7x + 12 = 0$ by factorisation.",,,,,,medium,3,english,ltr,"$x^2 - 7x + 12 = (x - 3)(x - 4)$, so $x = 3$ or $x = 4$."
+Chapter 1: Quadratic Equations,The quadratic formula,,long,"Derive the quadratic formula from $ax^2 + bx + c = 0$, then use it to solve $2x^2 + 5x - 3 = 0$.",,,,,,hard,8,english,ltr,"Complete the square on $ax^2 + bx + c$, then substitute $a = 2$, $b = 5$ and $c = -3$."
+Chapter 2: Matrices,Types of matrices,,mcq,"Which matrix has every element equal to zero?",Zero matrix,Identity matrix,Diagonal matrix,Row matrix,A,easy,1,english,ltr,"A zero matrix has all entries equal to $0$."
 Chapter 2: Matrices,Matrix operations,,mcq,"What is 2 + 2?",3,4,,,B,easy,1,english,ltr,
 Chapter 3: نظم,,,short,"غزل کی تعریف لکھیں۔",,,,,,medium,3,urdu,,"غزل اردو شاعری کی مقبول صنف ہے۔"
 ```
@@ -92,7 +95,8 @@ Rules:
 - medium: english|urdu|bilingual; leave blank for english.
 - direction: leave blank to inherit from medium.
 - explanation is optional.
-- Keep LaTeX math inline, e.g. x^2 - 5x + 6 = 0.
+- Wrap every expression in $…$: $x^2 - 5x + 6 = 0$, $\sqrt{3} + \sqrt{5}$,
+  $\sqrt[4]{16x^4y^8}$. Never leave bare x^2 or \sqrt{...} outside $…$.
 - No duplicate questions.
 - Maximum 500 rows.
 
