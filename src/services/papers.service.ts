@@ -198,3 +198,147 @@ export async function deletePaper(supabase: SupabaseServerClient, paperId: strin
   const { error } = await supabase.from("papers").delete().eq("id", paperId);
   if (error) throw new Error(`Could not delete the paper: ${error.message}`);
 }
+
+export interface PaperContentSet {
+  id: string;
+  items: Array<{
+    questionId: string;
+    section: string | null;
+    marksOverride: number | null;
+    optionOrder: string[] | null;
+  }>;
+}
+
+export interface UpdatePaperContentPayload {
+  paperId: string;
+  title: string;
+  duration_minutes: number;
+  exam_session: string | null;
+  instructions: string | null;
+  print_options: PaperPrintOptions;
+  total_marks: number;
+  sets: PaperContentSet[];
+}
+
+/**
+ * Replaces each set's questions without leaving the set empty on failure:
+ * new rows are staged at high display orders, old rows are removed only after
+ * the insert succeeds, then the staged rows are renumbered.
+ */
+export async function updatePaperContent(
+  supabase: SupabaseServerClient,
+  payload: UpdatePaperContentPayload,
+): Promise<void> {
+  for (const set of payload.sets) {
+    const { data: existingRows, error: existingError } = await supabase
+      .from("paper_questions")
+      .select("id")
+      .eq("paper_set_id", set.id);
+
+    if (existingError) {
+      throw new Error(`Could not read set questions: ${existingError.message}`);
+    }
+
+    const oldIds = ((existingRows ?? []) as Array<{ id: string }>).map((row) => row.id);
+    let stagedIds: string[] = [];
+
+    if (set.items.length > 0) {
+      const { data: staged, error: insertError } = await supabase
+        .from("paper_questions")
+        .insert(
+          set.items.map((item, index) => ({
+            paper_set_id: set.id,
+            question_id: item.questionId,
+            display_order: 1000 + index,
+            section: item.section,
+            marks_override: item.marksOverride,
+            option_order: item.optionOrder,
+          })),
+        )
+        .select("id");
+
+      if (insertError || !staged) {
+        throw new Error(`Could not save set questions: ${insertError?.message ?? "unknown error"}`);
+      }
+
+      stagedIds = (staged as Array<{ id: string }>).map((row) => row.id);
+    }
+
+    if (oldIds.length > 0) {
+      const { error: deleteError } = await supabase
+        .from("paper_questions")
+        .delete()
+        .in("id", oldIds);
+      if (deleteError) {
+        throw new Error(`Could not replace set questions: ${deleteError.message}`);
+      }
+    }
+
+    for (let index = 0; index < stagedIds.length; index += 1) {
+      const { error: orderError } = await supabase
+        .from("paper_questions")
+        .update({ display_order: index + 1 })
+        .eq("id", stagedIds[index]);
+      if (orderError) {
+        throw new Error(`Could not reorder set questions: ${orderError.message}`);
+      }
+    }
+  }
+
+  const { error } = await supabase
+    .from("papers")
+    .update({
+      title: payload.title,
+      duration_minutes: payload.duration_minutes,
+      exam_session: payload.exam_session,
+      instructions: payload.instructions,
+      print_options: payload.print_options as unknown as Json,
+      total_marks: payload.total_marks,
+    })
+    .eq("id", payload.paperId);
+
+  if (error) throw new Error(`Could not update the paper: ${error.message}`);
+}
+
+export async function duplicatePaper(
+  supabase: SupabaseServerClient,
+  paperId: string,
+  institutionId: string,
+): Promise<string> {
+  const paper = await getPaperWithSets(supabase, paperId);
+  if (!paper) throw new Error("That paper no longer exists.");
+  if (paper.institution_id !== institutionId) {
+    throw new Error("That paper belongs to another institution.");
+  }
+  if (!paper.subject_id) throw new Error("This paper has no subject to copy.");
+
+  const sets: GeneratedSet[] = paper.sets.map((set) => ({
+    label: set.set_label,
+    seed: set.seed,
+    items: set.items.map((item) => ({
+      questionId: item.question_id,
+      section: item.section ?? "Questions",
+      order: item.display_order,
+      marks: item.marks_override ?? item.question?.marks ?? 0,
+      optionOrder: item.option_order,
+    })),
+    totalMarks: set.items.reduce(
+      (sum, item) => sum + (item.marks_override ?? item.question?.marks ?? 0),
+      0,
+    ),
+  }));
+
+  return createPaper(supabase, {
+    title: `${paper.title} (copy)`,
+    class_name: paper.class_name,
+    subject_id: paper.subject_id,
+    institution_id: paper.institution_id,
+    instructions: paper.instructions,
+    duration_minutes: paper.duration_minutes,
+    exam_session: paper.exam_session,
+    print_options: paper.print_options,
+    seed: paper.seed,
+    total_marks: paper.total_marks,
+    sets,
+  });
+}

@@ -83,6 +83,30 @@ export const manualSelectionSchema = z.object({
 
 export type ManualSelectionInput = z.infer<typeof manualSelectionSchema>;
 
+export const paperEditItemSchema = z.object({
+  question_id: z.uuid(),
+  section: z.string().trim().max(120).nullable().optional(),
+  marks_override: z.number().positive().max(100).nullable().optional(),
+  option_order: z.array(z.string().trim().min(1).max(4)).max(8).nullable().optional(),
+});
+
+export const paperEditSetSchema = z.object({
+  id: z.uuid(),
+  items: z.array(paperEditItemSchema).max(300),
+});
+
+export const updatePaperSchema = z.object({
+  paper_id: z.uuid(),
+  title: z.string().trim().min(3, "Give the paper a title").max(200),
+  duration_minutes: z.number().int().min(15).max(300),
+  instructions: z.string().trim().max(2000).nullable().optional(),
+  exam_session: z.string().trim().max(50).nullable().optional(),
+  print_options: paperPrintOptionsSchema,
+  sets: z.array(paperEditSetSchema).min(1).max(4),
+});
+
+export type UpdatePaperInput = z.infer<typeof updatePaperSchema>;
+
 export const poolCountRequestSchema = z.object({
   topic_ids: z.array(z.uuid()).min(1),
 });

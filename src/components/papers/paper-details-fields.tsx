@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { SET_LABELS } from "@/lib/constants";
 import type { PrintOptionKey } from "@/lib/papers/print-options";
+import { cn } from "@/lib/utils";
 import type { PaperPrintOptions } from "@/types/domain";
 
 function PrintCheckbox({
@@ -60,12 +61,14 @@ export function PaperDetailsFields({
   onDurationChange: (value: number) => void;
   session: string;
   onSessionChange: (value: string) => void;
-  setCount: number;
-  onSetCountChange: (value: number) => void;
+  /** Omit to hide the variant picker (edit mode keeps the existing sets). */
+  setCount?: number;
+  onSetCountChange?: (value: number) => void;
   instructions: string;
   onInstructionsChange: (value: string) => void;
-  shuffleOptions: boolean;
-  onShuffleOptionsChange: (value: boolean) => void;
+  /** Omit to hide the shuffle control (edit mode keeps the existing order). */
+  shuffleOptions?: boolean;
+  onShuffleOptionsChange?: (value: boolean) => void;
   printOptions: PaperPrintOptions;
   onPrintOptionChange: (key: PrintOptionKey, value: boolean) => void;
 }) {
@@ -110,7 +113,12 @@ export function PaperDetailsFields({
           />
         </Field>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div
+          className={cn(
+            "grid grid-cols-1 gap-4",
+            setCount !== undefined && onSetCountChange ? "sm:grid-cols-3" : "sm:grid-cols-2",
+          )}
+        >
           <Field
             label="Duration (minutes)"
             htmlFor={`${uid}-duration`}
@@ -156,36 +164,50 @@ export function PaperDetailsFields({
             />
           </Field>
 
-          <Field
-            label="Variants"
-            htmlFor={`${uid}-sets`}
-            hint={
-              printOptions.set_label
-                ? undefined
-                : "Hidden on the paper. The answer key still shows the set."
-            }
-            action={
-              <PrintCheckbox
-                id={`${uid}-sets-print`}
-                checked={printOptions.set_label}
-                detail="set letter"
-                onChange={(value) => onPrintOptionChange("set_label", value)}
-              />
-            }
-          >
-            <Select
-              id={`${uid}-sets`}
-              value={setCount}
-              onChange={(event) => onSetCountChange(Number(event.target.value))}
+          {setCount !== undefined && onSetCountChange ? (
+            <Field
+              label="Variants"
+              htmlFor={`${uid}-sets`}
+              hint={
+                printOptions.set_label
+                  ? undefined
+                  : "Hidden on the paper. The answer key still shows the set."
+              }
+              action={
+                <PrintCheckbox
+                  id={`${uid}-sets-print`}
+                  checked={printOptions.set_label}
+                  detail="set letter"
+                  onChange={(value) => onPrintOptionChange("set_label", value)}
+                />
+              }
             >
-              {SET_LABELS.map((label, index) => (
-                <option key={label} value={index + 1}>
-                  {index + 1} {index === 0 ? "set" : "sets"} ({SET_LABELS.slice(0, index + 1).join(", ")})
-                </option>
-              ))}
-            </Select>
-          </Field>
+              <Select
+                id={`${uid}-sets`}
+                value={setCount}
+                onChange={(event) => onSetCountChange(Number(event.target.value))}
+              >
+                {SET_LABELS.map((label, index) => (
+                  <option key={label} value={index + 1}>
+                    {index + 1} {index === 0 ? "set" : "sets"} ({SET_LABELS.slice(0, index + 1).join(", ")})
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          ) : null}
         </div>
+
+        {setCount === undefined ? (
+          <label className="flex items-center gap-2 text-xs text-slate-700">
+            <input
+              type="checkbox"
+              checked={printOptions.set_label}
+              onChange={(event) => onPrintOptionChange("set_label", event.target.checked)}
+              className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+            />
+            Print the set letter next to the title
+          </label>
+        ) : null}
 
         <Field
           label="Instructions"
@@ -212,15 +234,17 @@ export function PaperDetailsFields({
           />
         </Field>
 
-        <label className="flex items-center gap-2 text-xs text-slate-700">
-          <input
-            type="checkbox"
-            checked={shuffleOptions}
-            onChange={(event) => onShuffleOptionsChange(event.target.checked)}
-            className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
-          />
-          Shuffle MCQ options per set (the answer key follows the shuffle)
-        </label>
+        {onShuffleOptionsChange ? (
+          <label className="flex items-center gap-2 text-xs text-slate-700">
+            <input
+              type="checkbox"
+              checked={shuffleOptions ?? false}
+              onChange={(event) => onShuffleOptionsChange(event.target.checked)}
+              className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+            />
+            Shuffle MCQ options per set (the answer key follows the shuffle)
+          </label>
+        ) : null}
       </CardContent>
     </Card>
   );

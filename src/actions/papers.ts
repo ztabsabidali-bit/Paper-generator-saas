@@ -15,8 +15,17 @@ import {
   manualSelectionSchema,
   poolCountRequestSchema,
   selectableQuestionFilterSchema,
+  updatePaperSchema,
 } from "@/lib/validation/paper";
-import { createPaper, deletePaper } from "@/services/papers.service";
+import {
+  createPaper,
+  deletePaper,
+  duplicatePaper,
+  getPaperWithSets,
+  updatePaperContent,
+  type PaperContentSet,
+} from "@/services/papers.service";
+import { QUESTION_TYPE_META } from "@/lib/constants";
 import {
   getPoolCounts,
   getPoolQuestions,
@@ -310,6 +319,205 @@ export async function deletePaperAction(paperId: string): Promise<ActionResult<n
     revalidatePath("/papers");
     revalidatePath("/dashboard");
     return actionOk(null);
+  } catch (error) {
+    return actionError(describeError(error));
+  }
+}
+
+const SECTION_TYPE_ORDER: QuestionType[] = ["mcq", "short", "long"];
+const SECTION_LETTERS = ["A", "B", "C", "D", "E", "F"];
+
+interface RawEditQuestion {
+  id: string;
+  question_type: QuestionType;
+  marks: number | string;
+  is_active: boolean;
+  topic: { subject_id: string } | Array<{ subject_id: string }> | null;
+}
+
+export async function updatePaperAction(
+  input: unknown,
+): Promise<ActionResult<{ id: string }>> {
+  const parsed = updatePaperSchema.safeParse(input);
+  if (!parsed.success) {
+    const flattened = parsed.error.flatten().fieldErrors;
+    return actionError(
+      "Please fix the highlighted fields.",
+      Object.fromEntries(
+        Object.entries(flattened)
+          .filter(([, value]) => Boolean(value?.length))
+          .map(([key, value]) => [key, value as string[]]),
+      ),
+    );
+  }
+
+  const context = await getSessionContext();
+  if (!context) return actionError("Your session has expired. Sign in again.");
+  const { supabase, profile } = context;
+  const values = parsed.data;
+
+  if (!profile.institution_id) {
+    return actionError("Your account is not linked to an institution. Ask a super admin.");
+  }
+
+  try {
+    const paper = await getPaperWithSets(supabase, values.paper_id);
+    if (!paper) return actionError("That paper no longer exists.");
+    if (paper.institution_id !== profile.institution_id) {
+      return actionError("That paper belongs to another institution.");
+    }
+    if (!paper.subject_id) return actionError("This paper has no subject to edit.");
+
+    const setById = new Map(paper.sets.map((set) => [set.id, set]));
+    if (
+      values.sets.length !== setById.size ||
+      values.sets.some((set) => !setById.has(set.id))
+    ) {
+      return actionError("The paper's sets changed. Reload the page and try again.");
+    }
+
+    const questionIds = [
+      ...new Set(values.sets.flatMap((set) => set.items.map((item) => item.question_id))),
+    ];
+    if (questionIds.length === 0) {
+      return actionError("Each set needs at least one question.");
+    }
+
+    const { data: questionRows, error: questionError } = await supabase
+      .from("questions")
+      .select("id, question_type, marks, is_active, topic:topics(subject_id)")
+      .in("id", questionIds);
+
+    if (questionError) return actionError(questionError.message);
+
+    const existingQuestionIds = new Set(
+      paper.sets.flatMap((set) => set.items.map((item) => item.question_id)),
+    );
+    const questionById = new Map<
+      string,
+      { questionType: QuestionType; marks: number }
+    >();
+
+    ((questionRows ?? []) as unknown as RawEditQuestion[]).forEach((row) => {
+      const topic = first(row.topic);
+      if (!topic || topic.subject_id !== paper.subject_id) return;
+      // Archived questions may stay on a paper, but cannot be newly added.
+      if (!row.is_active && !existingQuestionIds.has(row.id)) return;
+      questionById.set(row.id, {
+        questionType: row.question_type,
+        marks: Number(row.marks),
+      });
+    });
+
+    if (questionById.size !== questionIds.length) {
+      return actionError(
+        "Some questions are no longer available for this subject. Reload and pick again.",
+      );
+    }
+
+    const sets: PaperContentSet[] = [];
+    let totalMarks = 0;
+
+    for (const set of values.sets) {
+      const label = setById.get(set.id)?.set_label ?? "?";
+      if (set.items.length === 0) {
+        return actionError(`Set ${label} needs at least one question.`);
+      }
+
+      const seen = new Set<string>();
+      for (const item of set.items) {
+        if (seen.has(item.question_id)) {
+          return actionError(`Set ${label} lists the same question twice.`);
+        }
+        seen.add(item.question_id);
+      }
+
+      const typesPresent = new Set(
+        set.items.map((item) => questionById.get(item.question_id)!.questionType),
+      );
+      const orderedTypes = SECTION_TYPE_ORDER.filter((type) => typesPresent.has(type));
+
+      // Keep a set's current section wording for each type, then derive a
+      // heading only for types the set does not already print.
+      const sectionByType = new Map<QuestionType, string>();
+      set.items.forEach((item) => {
+        if (!item.section) return;
+        const type = questionById.get(item.question_id)!.questionType;
+        if (!sectionByType.has(type)) sectionByType.set(type, item.section);
+      });
+
+      const items = set.items.map((item) => {
+        const question = questionById.get(item.question_id)!;
+        let section = item.section ?? sectionByType.get(question.questionType) ?? null;
+
+        if (!section) {
+          const index = Math.max(orderedTypes.indexOf(question.questionType), 0);
+          section = `Section ${SECTION_LETTERS[index] ?? index + 1} — ${
+            QUESTION_TYPE_META[question.questionType].label
+          }`;
+          sectionByType.set(question.questionType, section);
+        }
+
+        return {
+          questionId: item.question_id,
+          section,
+          marksOverride: item.marks_override ?? null,
+          optionOrder: item.option_order ?? null,
+        };
+      });
+
+      const setTotal = items.reduce(
+        (sum, item) =>
+          sum + (item.marksOverride ?? questionById.get(item.questionId)!.marks),
+        0,
+      );
+      totalMarks = Math.max(totalMarks, setTotal);
+      sets.push({ id: set.id, items });
+    }
+
+    if (totalMarks <= 0) {
+      return actionError("The paper needs at least one mark to print.");
+    }
+
+    await updatePaperContent(supabase, {
+      paperId: values.paper_id,
+      title: values.title,
+      duration_minutes: values.duration_minutes,
+      exam_session: values.exam_session ?? null,
+      instructions: values.instructions ?? null,
+      print_options: resolvePrintOptions(values.print_options),
+      total_marks: totalMarks,
+      sets,
+    });
+
+    revalidatePath("/papers");
+    revalidatePath(`/papers/${values.paper_id}`);
+    revalidatePath(`/papers/${values.paper_id}/edit`);
+    revalidatePath("/dashboard");
+    return actionOk({ id: values.paper_id });
+  } catch (error) {
+    return actionError(describeError(error));
+  }
+}
+
+export async function duplicatePaperAction(
+  paperId: string,
+): Promise<ActionResult<{ id: string }>> {
+  const context = await getSessionContext();
+  if (!context) return actionError("Your session has expired.");
+  if (!context.profile.institution_id) {
+    return actionError("Your account is not linked to an institution. Ask a super admin.");
+  }
+
+  try {
+    const id = await duplicatePaper(
+      context.supabase,
+      paperId,
+      context.profile.institution_id,
+    );
+    revalidatePath("/papers");
+    revalidatePath("/dashboard");
+    return actionOk({ id });
   } catch (error) {
     return actionError(describeError(error));
   }

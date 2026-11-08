@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { FilePlus2, FileText, Printer } from "lucide-react";
+import { FilePlus2, FileText, Pencil, Printer } from "lucide-react";
 import { requireSession } from "@/lib/auth/guards";
 import { formatDate, pluralize } from "@/lib/utils";
 import { listPapers } from "@/services/papers.service";
+import { DuplicatePaperButton } from "@/components/papers/duplicate-paper-button";
 import { Badge } from "@/components/ui/badge";
 import { buttonClasses } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -88,13 +89,21 @@ export default async function PapersPage() {
                     {formatDate(paper.created_at)}
                   </TD>
                   <TD>
-                    <div className="flex items-center justify-end gap-1">
+                    <div className="flex flex-wrap items-center justify-end gap-1">
                       <Link
                         href={`/papers/${paper.id}`}
                         className={buttonClasses("ghost", "sm")}
                       >
                         Open
                       </Link>
+                      <Link
+                        href={`/papers/${paper.id}/edit`}
+                        className={buttonClasses("ghost", "sm")}
+                      >
+                        <Pencil className="h-3.5 w-3.5" aria-hidden />
+                        Edit
+                      </Link>
+                      <DuplicatePaperButton id={paper.id} label="Copy" />
                       <Link
                         href={`/papers/${paper.id}/print`}
                         className={buttonClasses("outline", "sm")}

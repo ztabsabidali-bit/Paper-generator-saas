@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, KeyRound, Printer } from "lucide-react";
+import { ArrowLeft, KeyRound, Pencil, Printer } from "lucide-react";
 import { requireSession } from "@/lib/auth/guards";
 import { correctOptionLabel, resolveOptions } from "@/lib/papers/answer-key";
 import { getPaperWithSets } from "@/services/papers.service";
 import { MathText } from "@/components/questions/math-text";
 import { DeletePaperButton } from "@/components/papers/delete-paper-button";
+import { DuplicatePaperButton } from "@/components/papers/duplicate-paper-button";
 import { Badge } from "@/components/ui/badge";
 import { buttonClasses } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -58,6 +59,14 @@ export default async function PaperDetailPage({
         actions={
           <>
             <DeletePaperButton id={paper.id} />
+            <DuplicatePaperButton id={paper.id} label="Duplicate" />
+            <Link
+              href={`/papers/${paper.id}/edit`}
+              className={buttonClasses("outline", "md")}
+            >
+              <Pencil className="h-4 w-4" aria-hidden />
+              Edit
+            </Link>
             <Link
               href={`/papers/${paper.id}/print?set=${activeSet?.set_label ?? "A"}`}
               className={buttonClasses("primary", "md")}
