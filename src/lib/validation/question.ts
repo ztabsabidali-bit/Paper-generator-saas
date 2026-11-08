@@ -70,7 +70,10 @@ export const questionFilterSchema = z.object({
   type: questionTypeSchema.optional(),
   difficulty: difficultySchema.optional(),
   medium: mediumSchema.optional(),
+  status: z.enum(["active", "archived", "all"]).optional(),
   q: z.string().optional(),
 });
 
 export type QuestionFilters = z.infer<typeof questionFilterSchema>;
+
+export const questionIdsSchema = z.array(z.uuid()).min(1).max(500);

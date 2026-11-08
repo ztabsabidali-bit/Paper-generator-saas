@@ -36,6 +36,7 @@ export function QuestionFilters({ catalog }: { catalog: FilterSubject[] }) {
   const type = searchParams.get("type") ?? "";
   const difficulty = searchParams.get("difficulty") ?? "";
   const medium = searchParams.get("medium") ?? "";
+  const status = searchParams.get("status") ?? "";
 
   const classes = useMemo(
     () => [...new Set(catalog.map((subject) => subject.className))],
@@ -102,6 +103,7 @@ export function QuestionFilters({ catalog }: { catalog: FilterSubject[] }) {
       type ||
       difficulty ||
       medium ||
+      status ||
       search,
   );
 
@@ -241,6 +243,17 @@ export function QuestionFilters({ catalog }: { catalog: FilterSubject[] }) {
               {meta.label}
             </option>
           ))}
+        </select>
+
+        <select
+          value={status}
+          onChange={(event) => setParam("status", event.target.value)}
+          className={SELECT_CLASSES}
+          aria-label="Filter by status"
+        >
+          <option value="">Active and archived</option>
+          <option value="active">Active only</option>
+          <option value="archived">Archived only</option>
         </select>
 
         <Button

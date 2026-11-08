@@ -2,10 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { getSessionContext } from "@/lib/auth/session";
+import type { SupabaseServerClient } from "@/lib/auth/session";
 import { canEditQuestion } from "@/lib/rbac";
 import { actionError, actionOk, describeError, type ActionResult } from "@/lib/action-result";
-import { questionInputSchema } from "@/lib/validation/question";
-import { getQuestionById } from "@/services/questions.service";
+import { questionIdsSchema, questionInputSchema } from "@/lib/validation/question";
+import { getQuestionById, getQuestionUsageCounts } from "@/services/questions.service";
 
 function fieldErrorsFrom(error: {
   flatten: () => { fieldErrors: Record<string, string[] | undefined> };
@@ -101,6 +102,168 @@ export async function archiveQuestionAction(id: string): Promise<ActionResult<nu
 
   revalidatePath("/questions");
   return actionOk(null);
+}
+
+export async function restoreQuestionAction(id: string): Promise<ActionResult<null>> {
+  const context = await getSessionContext();
+  if (!context) return actionError("Your session has expired. Sign in again.");
+
+  const { supabase, profile } = context;
+  const existing = await getQuestionById(supabase, id);
+  if (!existing) return actionError("That question no longer exists.");
+  if (!canEditQuestion(profile.role, profile.id, existing.created_by)) {
+    return actionError("You can only restore questions you created.");
+  }
+
+  const { error } = await supabase.from("questions").update({ is_active: true }).eq("id", id);
+  if (error) return actionError(error.message);
+
+  revalidatePath("/questions");
+  return actionOk(null);
+}
+
+interface EditableQuestionRow {
+  id: string;
+  created_by: string | null;
+  is_active: boolean;
+}
+
+async function loadEditableQuestions(
+  supabase: SupabaseServerClient,
+  ids: string[],
+  role: Parameters<typeof canEditQuestion>[0],
+  userId: string,
+) {
+  const { data, error } = await supabase
+    .from("questions")
+    .select("id, created_by, is_active")
+    .in("id", ids);
+
+  if (error) return { rows: [] as EditableQuestionRow[], error: error.message };
+
+  const rows = ((data ?? []) as EditableQuestionRow[]).filter((row) =>
+    canEditQuestion(role, userId, row.created_by),
+  );
+  return { rows, error: null };
+}
+
+export async function bulkArchiveQuestionsAction(
+  ids: string[],
+): Promise<ActionResult<{ updated: number; skipped: number }>> {
+  const parsed = questionIdsSchema.safeParse(ids);
+  if (!parsed.success) return actionError("Select at least one question.");
+
+  const context = await getSessionContext();
+  if (!context) return actionError("Your session has expired. Sign in again.");
+  const { supabase, profile } = context;
+
+  const { rows, error } = await loadEditableQuestions(
+    supabase,
+    parsed.data,
+    profile.role,
+    profile.id,
+  );
+  if (error) return actionError(error);
+
+  const target = rows.filter((row) => row.is_active).map((row) => row.id);
+  if (target.length > 0) {
+    const { error: updateError } = await supabase
+      .from("questions")
+      .update({ is_active: false })
+      .in("id", target);
+    if (updateError) return actionError(updateError.message);
+  }
+
+  revalidatePath("/questions");
+  return actionOk({
+    updated: target.length,
+    skipped: parsed.data.length - target.length,
+  });
+}
+
+export async function bulkRestoreQuestionsAction(
+  ids: string[],
+): Promise<ActionResult<{ updated: number; skipped: number }>> {
+  const parsed = questionIdsSchema.safeParse(ids);
+  if (!parsed.success) return actionError("Select at least one question.");
+
+  const context = await getSessionContext();
+  if (!context) return actionError("Your session has expired. Sign in again.");
+  const { supabase, profile } = context;
+
+  const { rows, error } = await loadEditableQuestions(
+    supabase,
+    parsed.data,
+    profile.role,
+    profile.id,
+  );
+  if (error) return actionError(error);
+
+  const target = rows.filter((row) => !row.is_active).map((row) => row.id);
+  if (target.length > 0) {
+    const { error: updateError } = await supabase
+      .from("questions")
+      .update({ is_active: true })
+      .in("id", target);
+    if (updateError) return actionError(updateError.message);
+  }
+
+  revalidatePath("/questions");
+  return actionOk({
+    updated: target.length,
+    skipped: parsed.data.length - target.length,
+  });
+}
+
+export async function bulkDeleteQuestionsAction(
+  ids: string[],
+): Promise<ActionResult<{ deleted: number; blocked: number; skipped: number }>> {
+  const parsed = questionIdsSchema.safeParse(ids);
+  if (!parsed.success) return actionError("Select at least one question.");
+
+  const context = await getSessionContext();
+  if (!context) return actionError("Your session has expired. Sign in again.");
+  const { supabase, profile } = context;
+
+  const { rows, error } = await loadEditableQuestions(
+    supabase,
+    parsed.data,
+    profile.role,
+    profile.id,
+  );
+  if (error) return actionError(error);
+
+  const editableIds = rows.map((row) => row.id);
+  const usage = await getQuestionUsageCounts(supabase, editableIds);
+
+  let deleted = 0;
+  let blocked = 0;
+
+  for (const id of editableIds) {
+    if ((usage[id] ?? 0) > 0) {
+      blocked += 1;
+      continue;
+    }
+
+    const { error: deleteError } = await supabase.from("questions").delete().eq("id", id);
+    if (deleteError) {
+      // A paper may use this question outside the viewer's RLS scope.
+      if (deleteError.code === "23503") {
+        blocked += 1;
+        continue;
+      }
+      return actionError(deleteError.message);
+    }
+    deleted += 1;
+  }
+
+  revalidatePath("/questions");
+  revalidatePath("/dashboard");
+  return actionOk({
+    deleted,
+    blocked,
+    skipped: parsed.data.length - editableIds.length,
+  });
 }
 
 export async function deleteQuestionAction(id: string): Promise<ActionResult<null>> {

@@ -19,6 +19,21 @@ export interface QuestionListFilters {
   limit?: number;
 }
 
+export type QuestionStatusFilter = "active" | "archived" | "all";
+
+export interface QuestionPageFilters extends QuestionListFilters {
+  status?: QuestionStatusFilter;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface QuestionPage {
+  questions: QuestionWithTopic[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
 const QUESTION_COLUMNS = [
   "id",
   "topic_id",
@@ -114,6 +129,120 @@ export async function listQuestions(
   if (error) throw new Error(`Could not load questions: ${error.message}`);
 
   return ((data ?? []) as unknown as RawQuestion[]).map(normalizeQuestionWithTopic);
+}
+
+/**
+ * Paged variant for the question bank. Counts first so an out-of-range page is
+ * clamped instead of letting PostgREST reject the range with a 416.
+ */
+export async function listQuestionsPage(
+  supabase: SupabaseServerClient,
+  filters: QuestionPageFilters = {},
+): Promise<QuestionPage> {
+  const pageSize = Math.min(Math.max(filters.pageSize ?? 50, 1), 100);
+  const requestedPage = Math.max(filters.page ?? 1, 1);
+
+  if (filters.topicIds && filters.topicIds.length === 0) {
+    return { questions: [], total: 0, page: 1, pageSize };
+  }
+
+  let countQuery = supabase
+    .from("questions")
+    .select("id", { count: "exact", head: true });
+
+  let dataQuery = supabase
+    .from("questions")
+    .select(`${QUESTION_COLUMNS}, topic:topics(${TOPIC_SELECT})`);
+
+  if (filters.topicIds) {
+    countQuery = countQuery.in("topic_id", filters.topicIds);
+    dataQuery = dataQuery.in("topic_id", filters.topicIds);
+  }
+  if (filters.type) {
+    countQuery = countQuery.eq("question_type", filters.type);
+    dataQuery = dataQuery.eq("question_type", filters.type);
+  }
+  if (filters.difficulty) {
+    countQuery = countQuery.eq("difficulty", filters.difficulty);
+    dataQuery = dataQuery.eq("difficulty", filters.difficulty);
+  }
+  if (filters.medium) {
+    countQuery = countQuery.eq("medium", filters.medium);
+    dataQuery = dataQuery.eq("medium", filters.medium);
+  }
+  if (filters.status === "active") {
+    countQuery = countQuery.eq("is_active", true);
+    dataQuery = dataQuery.eq("is_active", true);
+  } else if (filters.status === "archived") {
+    countQuery = countQuery.eq("is_active", false);
+    dataQuery = dataQuery.eq("is_active", false);
+  } else if (filters.activeOnly) {
+    countQuery = countQuery.eq("is_active", true);
+    dataQuery = dataQuery.eq("is_active", true);
+  }
+  if (filters.search) {
+    countQuery = countQuery.ilike("question_text", `%${filters.search}%`);
+    dataQuery = dataQuery.ilike("question_text", `%${filters.search}%`);
+  }
+
+  const { count, error: countError } = await countQuery;
+  if (countError) throw new Error(`Could not count questions: ${countError.message}`);
+
+  const total = count ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const page = Math.min(requestedPage, totalPages);
+
+  if (total === 0) {
+    return { questions: [], total: 0, page: 1, pageSize };
+  }
+
+  const from = (page - 1) * pageSize;
+  const { data, error } = await dataQuery
+    .order("created_at", { ascending: false })
+    .range(from, from + pageSize - 1);
+
+  if (error) throw new Error(`Could not load questions: ${error.message}`);
+
+  return {
+    questions: ((data ?? []) as unknown as RawQuestion[]).map(normalizeQuestionWithTopic),
+    total,
+    page,
+    pageSize,
+  };
+}
+
+/**
+ * Number of distinct papers each question currently appears in. RLS limits
+ * this to papers the viewer can reach; the delete FK still protects the rest.
+ */
+export async function getQuestionUsageCounts(
+  supabase: SupabaseServerClient,
+  questionIds: string[],
+): Promise<Record<string, number>> {
+  if (questionIds.length === 0) return {};
+
+  const { data, error } = await supabase
+    .from("paper_questions")
+    .select("question_id, paper_set:paper_sets!inner(paper_id)")
+    .in("question_id", questionIds);
+
+  if (error) throw new Error(`Could not count question usage: ${error.message}`);
+
+  const papersByQuestion = new Map<string, Set<string>>();
+  ((data ?? []) as unknown as Array<{
+    question_id: string;
+    paper_set: { paper_id: string } | Array<{ paper_id: string }> | null;
+  }>).forEach((row) => {
+    const paperSet = first(row.paper_set);
+    if (!paperSet) return;
+    const papers = papersByQuestion.get(row.question_id) ?? new Set<string>();
+    papers.add(paperSet.paper_id);
+    papersByQuestion.set(row.question_id, papers);
+  });
+
+  return Object.fromEntries(
+    [...papersByQuestion.entries()].map(([id, papers]) => [id, papers.size]),
+  );
 }
 
 export async function getQuestionById(
