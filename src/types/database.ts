@@ -306,6 +306,51 @@ export interface Database {
         };
         Relationships: [];
       };
+      paper_blueprints: {
+        Row: {
+          id: string;
+          institution_id: string;
+          created_by: string | null;
+          name: string;
+          subject_id: string;
+          topic_ids: string[];
+          blueprint: Json;
+          set_count: number;
+          shuffle_options: boolean;
+          duration_minutes: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          institution_id?: string;
+          created_by?: string | null;
+          name: string;
+          subject_id: string;
+          topic_ids?: string[];
+          blueprint?: Json;
+          set_count?: number;
+          shuffle_options?: boolean;
+          duration_minutes?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          institution_id?: string;
+          created_by?: string | null;
+          name?: string;
+          subject_id?: string;
+          topic_ids?: string[];
+          blueprint?: Json;
+          set_count?: number;
+          shuffle_options?: boolean;
+          duration_minutes?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {

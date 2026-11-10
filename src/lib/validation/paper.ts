@@ -107,6 +107,32 @@ export const updatePaperSchema = z.object({
 
 export type UpdatePaperInput = z.infer<typeof updatePaperSchema>;
 
+export const blueprintInputSchema = z.object({
+  name: z.string().trim().min(1, "Give the blueprint a name").max(80),
+  subject_id: z.uuid("Select a subject"),
+  topic_ids: z.array(z.uuid()).min(1, "Select at least one chapter").max(300),
+  blueprint: z
+    .array(blueprintRowSchema)
+    .min(1)
+    .refine((rows) => rows.some((row) => row.enabled && row.count > 0), {
+      message: "Enable at least one section",
+    }),
+  set_count: z.number().int().min(1).max(4),
+  shuffle_options: z.boolean(),
+  duration_minutes: z.number().int().min(15).max(300),
+});
+
+export type BlueprintInput = z.infer<typeof blueprintInputSchema>;
+
+export const createBlueprintSchema = blueprintInputSchema;
+
+export const updateBlueprintSchema = blueprintInputSchema.extend({
+  id: z.uuid(),
+});
+
+export type UpdateBlueprintInput = z.infer<typeof updateBlueprintSchema>;
+
+
 export const poolCountRequestSchema = z.object({
   topic_ids: z.array(z.uuid()).min(1),
 });

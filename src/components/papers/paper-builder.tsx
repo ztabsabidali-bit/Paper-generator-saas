@@ -5,7 +5,7 @@ import { Alert } from "@/components/ui/shell";
 import { cn } from "@/lib/utils";
 import { AutoPaperBuilder } from "./auto-paper-builder";
 import { ManualPaperBuilder } from "./manual-paper-builder";
-import type { SubjectWithTopics } from "@/types/domain";
+import type { PaperBlueprint, SubjectWithTopics } from "@/types/domain";
 
 type BuilderMode = "manual" | "auto";
 
@@ -26,10 +26,12 @@ export function PaperBuilder({
   catalog,
   defaultSession,
   defaultInstructions,
+  blueprints,
 }: {
   catalog: SubjectWithTopics[];
   defaultSession: string;
   defaultInstructions: string;
+  blueprints: PaperBlueprint[];
 }) {
   const [mode, setMode] = useState<BuilderMode>("manual");
 
@@ -85,6 +87,7 @@ export function PaperBuilder({
           catalog={catalog}
           defaultSession={defaultSession}
           defaultInstructions={defaultInstructions}
+          blueprints={blueprints}
         />
       </div>
     </div>

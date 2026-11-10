@@ -2,6 +2,7 @@ import { requireSession } from "@/lib/auth/guards";
 import { DEFAULT_INSTRUCTIONS } from "@/lib/constants";
 import { getCatalog } from "@/services/catalog.service";
 import { getInstitution } from "@/services/institution.service";
+import { listBlueprints } from "@/services/blueprints.service";
 import { PaperBuilder } from "@/components/papers/paper-builder";
 import { Alert, PageHeader } from "@/components/ui/shell";
 
@@ -26,9 +27,10 @@ export default async function NewPaperPage() {
     );
   }
 
-  const [catalog, institution] = await Promise.all([
+  const [catalog, institution, blueprints] = await Promise.all([
     getCatalog(supabase, profile.institution_id),
     getInstitution(supabase, profile.institution_id),
+    listBlueprints(supabase, profile.institution_id),
   ]);
 
   return (
@@ -41,6 +43,7 @@ export default async function NewPaperPage() {
         catalog={catalog}
         defaultSession={institution.exam_session ?? ""}
         defaultInstructions={DEFAULT_INSTRUCTIONS}
+        blueprints={blueprints}
       />
     </>
   );

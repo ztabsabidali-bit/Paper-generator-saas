@@ -3,7 +3,22 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { AlertTriangle, ArrowRight, Check, Loader2, Sparkles, Wand2 } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowRight,
+  Check,
+  Loader2,
+  RefreshCw,
+  Save,
+  Sparkles,
+  Trash2,
+  Wand2,
+} from "lucide-react";
+import {
+  createBlueprintAction,
+  deleteBlueprintAction,
+  updateBlueprintAction,
+} from "@/actions/blueprints";
 import { generatePaperAction, getPoolCountsAction } from "@/actions/papers";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonClasses } from "@/components/ui/button";
@@ -12,21 +27,20 @@ import { Input, Select } from "@/components/ui/field";
 import { Alert } from "@/components/ui/shell";
 import { groupChapters } from "@/lib/catalog";
 import { DIFFICULTY_META, QUESTION_TYPE_META } from "@/lib/constants";
+import { DEFAULT_BLUEPRINT } from "@/lib/papers/blueprint";
 import { defaultPaperTitle } from "@/lib/papers/labels";
 import { DEFAULT_PRINT_OPTIONS, type PrintOptionKey } from "@/lib/papers/print-options";
 import { cn, pluralize } from "@/lib/utils";
 import { PaperDetailsFields } from "./paper-details-fields";
 import { PaperScopeFields } from "./paper-scope-fields";
 import type { QuestionType } from "@/types/database";
-import type { PaperPrintOptions, SubjectWithTopics } from "@/types/domain";
+import type {
+  PaperBlueprint,
+  PaperPrintOptions,
+  SubjectWithTopics,
+} from "@/types/domain";
 import type { BlueprintRow } from "@/lib/validation/paper";
 import type { PoolCounts } from "@/services/questions.service";
-
-const DEFAULT_BLUEPRINT: BlueprintRow[] = [
-  { type: "mcq", enabled: true, count: 10, marks: 1, difficulty: "mixed" },
-  { type: "short", enabled: true, count: 5, marks: 3, difficulty: "mixed" },
-  { type: "long", enabled: true, count: 2, marks: 8, difficulty: "mixed" },
-];
 
 function poolForType(counts: PoolCounts | null, type: QuestionType) {
   if (!counts) return 0;
@@ -38,13 +52,16 @@ export function AutoPaperBuilder({
   catalog,
   defaultSession,
   defaultInstructions,
+  blueprints,
 }: {
   catalog: SubjectWithTopics[];
   defaultSession: string;
   defaultInstructions: string;
+  blueprints: PaperBlueprint[];
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [blueprintPending, startBlueprintTransition] = useTransition();
 
   const [className, setClassName] = useState(catalog[0]?.class_name ?? "");
   const [subjectId, setSubjectId] = useState(catalog[0]?.id ?? "");
@@ -60,6 +77,15 @@ export function AutoPaperBuilder({
   const [printOptions, setPrintOptions] = useState<PaperPrintOptions>(() => ({
     ...DEFAULT_PRINT_OPTIONS,
   }));
+
+  const [savedBlueprints, setSavedBlueprints] = useState<PaperBlueprint[]>(blueprints);
+  const [selectedBlueprintId, setSelectedBlueprintId] = useState("");
+  const [blueprintName, setBlueprintName] = useState("");
+  const [blueprintError, setBlueprintError] = useState<string | null>(null);
+  const [blueprintMessage, setBlueprintMessage] = useState<string | null>(null);
+
+  const selectedBlueprint =
+    savedBlueprints.find((item) => item.id === selectedBlueprintId) ?? null;
 
   function updatePrintOption(key: PrintOptionKey, value: boolean) {
     setPrintOptions((current) => ({ ...current, [key]: value }));
@@ -147,6 +173,152 @@ export function AutoPaperBuilder({
     );
     setWarnings([]);
     setCreatedId(null);
+  }
+
+  function loadBlueprint(id: string) {
+    setBlueprintError(null);
+    setBlueprintMessage(null);
+    setSelectedBlueprintId(id);
+
+    if (!id) {
+      setBlueprintName("");
+      return;
+    }
+
+    const saved = savedBlueprints.find((item) => item.id === id);
+    if (!saved) return;
+
+    const target = catalog.find((item) => item.id === saved.subject_id);
+    if (!target) {
+      setBlueprintError("That blueprint's subject is no longer available.");
+      return;
+    }
+
+    setClassName(target.class_name);
+    setSubjectId(target.id);
+    setSelectedChapters(
+      Array.from(
+        new Set(
+          target.topics
+            .filter((topic) => saved.topic_ids.includes(topic.id))
+            .map((topic) => topic.chapter_title),
+        ),
+      ),
+    );
+    setBlueprint(saved.blueprint);
+    setSetCount(saved.set_count);
+    setShuffleOptions(saved.shuffle_options);
+    setDuration(saved.duration_minutes);
+    setBlueprintName(saved.name);
+    if (!titleTouched) setTitle(defaultPaperTitle(target));
+    setWarnings([]);
+    setCreatedId(null);
+    setError(null);
+  }
+
+  function blueprintPayload() {
+    return {
+      name: blueprintName.trim(),
+      subject_id: subjectId,
+      topic_ids: topicIds,
+      blueprint,
+      set_count: setCount,
+      shuffle_options: shuffleOptions,
+      duration_minutes: duration,
+    };
+  }
+
+  function blueprintProblem() {
+    if (!blueprintName.trim()) return "Give the blueprint a name before saving.";
+    if (!subjectId) return "Select a subject first.";
+    if (topicIds.length === 0) return "Select at least one chapter before saving.";
+    if (enabledRows.length === 0) return "Enable at least one section before saving.";
+    return null;
+  }
+
+  function saveBlueprintAsNew() {
+    const problem = blueprintProblem();
+    if (problem) {
+      setBlueprintError(problem);
+      setBlueprintMessage(null);
+      return;
+    }
+
+    setBlueprintError(null);
+    setBlueprintMessage(null);
+    startBlueprintTransition(async () => {
+      const result = await createBlueprintAction(blueprintPayload());
+      if (!result.ok) {
+        setBlueprintError(result.error);
+        return;
+      }
+
+      const created = result.data.blueprint;
+      setSavedBlueprints((current) => [
+        created,
+        ...current.filter((item) => item.id !== created.id),
+      ]);
+      setSelectedBlueprintId(created.id);
+      setBlueprintName(created.name);
+      setBlueprintMessage(`Saved "${created.name}".`);
+    });
+  }
+
+  function updateLoadedBlueprint() {
+    if (!selectedBlueprint) return;
+
+    const problem = blueprintProblem();
+    if (problem) {
+      setBlueprintError(problem);
+      setBlueprintMessage(null);
+      return;
+    }
+
+    setBlueprintError(null);
+    setBlueprintMessage(null);
+    const id = selectedBlueprint.id;
+    startBlueprintTransition(async () => {
+      const result = await updateBlueprintAction({ id, ...blueprintPayload() });
+      if (!result.ok) {
+        setBlueprintError(result.error);
+        return;
+      }
+
+      const updated = result.data.blueprint;
+      setSavedBlueprints((current) =>
+        current.map((item) => (item.id === updated.id ? updated : item)),
+      );
+      setBlueprintName(updated.name);
+      setBlueprintMessage(`Updated "${updated.name}".`);
+    });
+  }
+
+  function removeLoadedBlueprint() {
+    if (!selectedBlueprint) return;
+    if (
+      !window.confirm(
+        `Delete the blueprint "${selectedBlueprint.name}"? Papers already generated from it are not affected.`,
+      )
+    ) {
+      return;
+    }
+
+    setBlueprintError(null);
+    setBlueprintMessage(null);
+    const id = selectedBlueprint.id;
+    const name = selectedBlueprint.name;
+    startBlueprintTransition(async () => {
+      const result = await deleteBlueprintAction(id);
+      if (!result.ok) {
+        setBlueprintError(result.error);
+        return;
+      }
+
+      setSavedBlueprints((current) => current.filter((item) => item.id !== id));
+      setSelectedBlueprintId("");
+      setBlueprintName("");
+      setBlueprintMessage(`Deleted "${name}".`);
+    });
   }
 
   function generate() {
@@ -295,7 +467,102 @@ export function AutoPaperBuilder({
 
         <Card>
           <CardHeader className="flex flex-wrap items-center justify-between gap-1">
-            <CardTitle>2 · Blueprint</CardTitle>
+            <CardTitle>2 · Saved blueprints</CardTitle>
+            <span className="text-[11px] text-slate-500">
+              Reuse chapters, counts, marks, levels and variants
+            </span>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_220px]">
+              <Select
+                value={selectedBlueprintId}
+                onChange={(event) => loadBlueprint(event.target.value)}
+                aria-label="Load a saved blueprint"
+              >
+                <option value="">
+                  {savedBlueprints.length === 0
+                    ? "No saved blueprints yet"
+                    : "Load a saved blueprint…"}
+                </option>
+                {savedBlueprints.map((saved) => (
+                  <option key={saved.id} value={saved.id}>
+                    {saved.name}
+                    {saved.subject
+                      ? ` · ${saved.subject.class_name} ${saved.subject.subject_name}`
+                      : ""}
+                  </option>
+                ))}
+              </Select>
+              <Input
+                value={blueprintName}
+                onChange={(event) => setBlueprintName(event.target.value)}
+                placeholder="Blueprint name"
+                aria-label="Blueprint name"
+                maxLength={80}
+              />
+            </div>
+
+            <div className="flex flex-wrap items-center gap-1.5">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={saveBlueprintAsNew}
+                disabled={blueprintPending}
+              >
+                {blueprintPending ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+                ) : (
+                  <Save className="h-3.5 w-3.5" aria-hidden />
+                )}
+                Save as new
+              </Button>
+
+              {selectedBlueprint ? (
+                <>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={updateLoadedBlueprint}
+                    disabled={blueprintPending}
+                  >
+                    <RefreshCw className="h-3.5 w-3.5" aria-hidden />
+                    Update loaded
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={removeLoadedBlueprint}
+                    disabled={blueprintPending}
+                    className="text-rose-600 hover:bg-rose-50"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                    Delete
+                  </Button>
+                </>
+              ) : null}
+            </div>
+
+            {blueprintError ? (
+              <p className="text-[11px] text-rose-600">{blueprintError}</p>
+            ) : null}
+            {blueprintMessage ? (
+              <p className="text-[11px] text-emerald-700">{blueprintMessage}</p>
+            ) : null}
+
+            <p className="text-[11px] leading-relaxed text-slate-500">
+              Loading a blueprint replaces the chapters, section counts, marks, levels,
+              variants, shuffle choice and duration. The paper title is left alone once you
+              have typed one.
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-wrap items-center justify-between gap-1">
+            <CardTitle>3 · Blueprint</CardTitle>
             <span className="text-[11px] text-slate-500">
               Marks apply per question in every set
             </span>
@@ -419,7 +686,7 @@ export function AutoPaperBuilder({
         </Card>
 
         <PaperDetailsFields
-          heading="3 · Paper details"
+          heading="4 · Paper details"
           title={title}
           onTitleChange={(value) => {
             setTitle(value);

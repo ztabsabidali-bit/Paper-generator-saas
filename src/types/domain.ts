@@ -102,6 +102,31 @@ export interface PaperWithSets extends Paper {
   >;
 }
 
+/** One section of an auto-fill blueprint: how many to draw, marks each, level. */
+export interface PaperBlueprintSection {
+  type: QuestionType;
+  enabled: boolean;
+  count: number;
+  marks: number;
+  difficulty: "mixed" | Difficulty;
+}
+
+export interface PaperBlueprint {
+  id: string;
+  institution_id: string;
+  created_by: string | null;
+  name: string;
+  subject_id: string;
+  topic_ids: string[];
+  blueprint: PaperBlueprintSection[];
+  set_count: number;
+  shuffle_options: boolean;
+  duration_minutes: number;
+  created_at: string;
+  updated_at: string;
+  subject: Subject | null;
+}
+
 export interface InstitutionSettings {
   name: string;
   tagline: string | null;
