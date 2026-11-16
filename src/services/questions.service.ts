@@ -16,6 +16,7 @@ export interface QuestionListFilters {
   medium?: Medium;
   search?: string;
   activeOnly?: boolean;
+  status?: QuestionStatusFilter;
   limit?: number;
 }
 
@@ -122,7 +123,13 @@ export async function listQuestions(
   if (filters.type) query = query.eq("question_type", filters.type);
   if (filters.difficulty) query = query.eq("difficulty", filters.difficulty);
   if (filters.medium) query = query.eq("medium", filters.medium);
-  if (filters.activeOnly) query = query.eq("is_active", true);
+  if (filters.status === "active") {
+    query = query.eq("is_active", true);
+  } else if (filters.status === "archived") {
+    query = query.eq("is_active", false);
+  } else if (filters.activeOnly) {
+    query = query.eq("is_active", true);
+  }
   if (filters.search) query = query.ilike("question_text", `%${filters.search}%`);
 
   const { data, error } = await query;

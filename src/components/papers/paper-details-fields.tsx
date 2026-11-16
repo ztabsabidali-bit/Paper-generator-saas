@@ -245,6 +245,30 @@ export function PaperDetailsFields({
             Shuffle MCQ options per set (the answer key follows the shuffle)
           </label>
         ) : null}
+
+        <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50/60 p-3">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+            Print extras
+          </p>
+          <label className="flex items-center gap-2 text-xs text-slate-700">
+            <input
+              type="checkbox"
+              checked={printOptions.page_numbers}
+              onChange={(event) => onPrintOptionChange("page_numbers", event.target.checked)}
+              className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+            />
+            Page numbers at the bottom of every printed page
+          </label>
+          <label className="flex items-center gap-2 text-xs text-slate-700">
+            <input
+              type="checkbox"
+              checked={printOptions.watermark}
+              onChange={(event) => onPrintOptionChange("watermark", event.target.checked)}
+              className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+            />
+            Faint institution watermark behind the text
+          </label>
+        </div>
       </CardContent>
     </Card>
   );

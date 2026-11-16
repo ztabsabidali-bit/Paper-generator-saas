@@ -3,6 +3,7 @@ import { requireSession } from "@/lib/auth/guards";
 import { getInstitution } from "@/services/institution.service";
 import { getPaperWithSets } from "@/services/papers.service";
 import { AnswerKeyDocument, PaperDocument } from "@/components/print/paper-document";
+import { PrintDecorations } from "@/components/print/print-decorations";
 import { PrintToolbar } from "@/components/print/print-toolbar";
 
 export const metadata = { title: "Print paper" };
@@ -32,6 +33,10 @@ export default async function PrintPaperPage({
 
   return (
     <div className="min-h-screen bg-slate-100 pb-10 print:bg-white print:pb-0">
+      <PrintDecorations
+        options={paper.print_options}
+        institutionName={institution.name}
+      />
       <PrintToolbar
         paperId={paper.id}
         sets={paper.sets.map((set) => set.set_label)}

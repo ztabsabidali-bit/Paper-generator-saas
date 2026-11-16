@@ -15,10 +15,12 @@ Auth + RLS) · Cloudflare Workers via `@opennextjs/cloudflare`.
 | --- | --- |
 | Auth | Email/password sign-in with `@supabase/ssr` cookie sessions, refreshed in `src/proxy.ts` |
 | Roles | `super_admin`, `admin`, `teacher` — enforced by Postgres RLS, mirrored in the UI |
-| Question bank | Cascading class → subject → chapter → topic, manual entry, Markdown + LaTeX (KaTeX), Urdu RTL toggle, MCQ/short/long, difficulty, marks, archive |
-| Paper builder | Scope picker, per-section counts/marks/difficulty, live pool availability, 1–4 variants, option shuffling, deterministic seed |
-| Print | A4 layout, institution header, instructions, marks gutter, dotted answer space, answer key on its own page |
-| Institution | Name, tagline, address, logo URL, exam session, footer note |
+| Question bank | Cascading class → subject → chapter → topic filters, manual entry, CSV import/export, Markdown + LaTeX (KaTeX), Urdu RTL toggle, MCQ/short/long, difficulty, marks, archive/restore, delete with usage guard |
+| Paper builder | Scope picker, per-section counts/marks/difficulty, live pool availability, 1–4 variants, option shuffling, deterministic seed, manual selection or auto-fill |
+| Blueprints | Save a scope + section mix + variant count + duration once, then reload it for future papers (institution-scoped, author/admin edits) |
+| Papers | Edit details or question selection after generation, duplicate with a fresh seed, multi-set variants, answer key |
+| Print | A4 layout, institution header, optional detail toggles, page numbers, optional watermark, answer key on its own page; print-to-PDF from the browser |
+| Institution | Name, tagline, address, logo upload, exam session, footer note |
 | Staff | Super-admin provisioning, role changes, activation, deletion (service-role, server only) |
 
 ---
@@ -66,6 +68,11 @@ Files:
 1. `supabase/migrations/0001_schema.sql` — enums, tables, indexes, triggers
 2. `supabase/migrations/0002_rls.sql` — helper functions and row level security
 3. `supabase/migrations/0003_seed.sql` — demo catalogue and questions (idempotent)
+4. `supabase/migrations/0004_institutions.sql` — institutions, staff profiles
+5. `supabase/migrations/0005_drop_legacy.sql` — removes the pre-tenancy singleton table
+6. `supabase/migrations/0006_paper_print_options.sql` — per-paper print detail toggles
+7. `supabase/migrations/0007_paper_blueprints.sql` — reusable blueprint library
+8. `supabase/migrations/0008_branding_storage.sql` — public `branding` bucket for logo uploads
 
 ### Bootstrap the first super admin
 
@@ -192,6 +199,12 @@ key — with `@page { size: A4 }`, `break-inside: avoid` on questions and
 `break-before: page` on the key. "Print / Save as PDF" uses the browser, which gives
 correct Urdu shaping and KaTeX rendering for free.
 
+Page numbers come from a CSS `@page` bottom margin box (`counter(page)` / `counter(pages)`),
+so nothing needs to run on the client. The optional watermark is a `position: fixed`
+element, which Chrome repeats on every printed page. Both are per-paper toggles stored in
+`papers.print_options`, alongside the title/session/duration/set/instructions switches.
+Leave the browser's own "Headers and footers" option off so the sheet is the only footer.
+
 Fonts (Inter, Noto Nastaliq Urdu) are loaded from Google Fonts. For offline printing and a
 smaller Worker bundle, self-host subsetted `.woff2` files and swap the `<link>` in
 `src/app/layout.tsx`.
@@ -203,16 +216,18 @@ smaller Worker bundle, self-host subsetted `.woff2` files and swap the `<link>` 
 | Table | Purpose |
 | --- | --- |
 | `users` | Mirrors `auth.users`, owns `role` and `is_active` |
-| `subjects` | `(class_name, subject_name)` unique |
+| `institutions` | School name, tagline, address, logo URL, exam session, footer note |
+| `subjects` | `(class_name, subject_name)` unique per institution |
 | `topics` | Chapter → topic → sub-topic rows |
 | `questions` | Type, text, JSONB options, answer, medium, difficulty, marks, direction |
-| `papers` | Exam metadata, total marks, seed, owner |
+| `papers` | Exam metadata, total marks, seed, print options, owner |
 | `paper_sets` | Variants of a paper (`A`, `B`, …) with their own seed |
 | `paper_questions` | Ordered questions per set, marks override, option order |
-| `institution_settings` | Singleton print header |
+| `paper_blueprints` | Saved scope + section mix + variant/duration defaults |
 
 `paper_sets` is the addition that makes multi-set variants possible: a question belongs to
-a *set*, not directly to a paper.
+a *set*, not directly to a paper. Blueprints store a snapshot of builder choices only;
+generated papers keep their own copy and are unaffected when a blueprint changes.
 
 ---
 
@@ -242,7 +257,7 @@ a *set*, not directly to a paper.
 | `npm run preview` | Build + run in the Cloudflare Workers runtime |
 | `npm run deploy` | Build + deploy |
 | `npm run cf-typegen` | Generate `CloudflareEnv` types |
-| `npm test` | Vitest (paper generator) |
+| `npm test` | Vitest (generator, answer key, print options, math, CSV import) |
 | `npm run db:types` | Regenerate Supabase types into `src/types/database.generated.ts` |
 
 ## Known constraints & next steps
@@ -264,5 +279,6 @@ a *set*, not directly to a paper.
   Rendering (paid entitlement) — the print route is already shaped for it.
 - **Password reset:** accounts are admin-issued; add a "set password" flow if you want
   self-service resets.
-- **List endpoints** cap at 200 questions / 100 papers. Add cursor pagination before
-  scaling to a very large bank.
+- **Large banks:** the question bank paginates 50 rows at a time (server-side count, then
+  a clamped range), and CSV export caps at 5,000 rows per download. Add cursor pagination
+  before exporting much more than that.

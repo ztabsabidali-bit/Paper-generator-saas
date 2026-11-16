@@ -3,12 +3,14 @@ import { redirect } from "next/navigation";
 import {
   ChevronLeft,
   ChevronRight,
+  Download,
   LibraryBig,
   Plus,
   Upload,
 } from "lucide-react";
 import { requireSession } from "@/lib/auth/guards";
 import { canEditQuestion, canManageBank } from "@/lib/rbac";
+import { resolveFilterTopicIds } from "@/lib/questions/filter-topics";
 import {
   questionFilterSchema,
   type QuestionFilters as QuestionFilterValues,
@@ -84,30 +86,7 @@ export default async function QuestionsPage({
   const requestedPage = Math.max(Number(readParam(params, "page")) || 1, 1);
 
   const catalog = await getCatalog(supabase);
-
-  const topicRows = catalog.flatMap((subject) =>
-    subject.topics.map((topic) => ({ subject, topic })),
-  );
-
-  let topicIds: string[] | undefined;
-  if (
-    filters.class ||
-    filters.subject ||
-    filters.chapter ||
-    filters.topic ||
-    filters.subtopic
-  ) {
-    topicIds = topicRows
-      .filter(
-        ({ subject, topic }) =>
-          (!filters.class || subject.class_name === filters.class) &&
-          (!filters.subject || subject.id === filters.subject) &&
-          (!filters.chapter || topic.chapter_title === filters.chapter) &&
-          (!filters.topic || topic.topic_title === filters.topic) &&
-          (!filters.subtopic || topic.subtopic_title === filters.subtopic),
-      )
-      .map(({ topic }) => topic.id);
-  }
+  const topicIds = resolveFilterTopicIds(catalog, filters);
 
   const pageData = await listQuestionsPage(supabase, {
     topicIds,
@@ -144,6 +123,15 @@ export default async function QuestionsPage({
     })),
   }));
 
+  const exportParams = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (key === "page") continue;
+    const single = Array.isArray(value) ? value[0] : value;
+    if (single) exportParams.set(key, single);
+  }
+  const exportQuery = exportParams.toString();
+  const exportHref = exportQuery ? `/questions/export?${exportQuery}` : "/questions/export";
+
   return (
     <>
       <PageHeader
@@ -160,6 +148,10 @@ export default async function QuestionsPage({
               <Upload className="h-4 w-4" aria-hidden />
               Import CSV
             </Link>
+            <a href={exportHref} className={buttonClasses("outline", "md")}>
+              <Download className="h-4 w-4" aria-hidden />
+              Export CSV
+            </a>
             <Link href="/questions/new" className={buttonClasses("primary", "md")}>
               <Plus className="h-4 w-4" aria-hidden />
               New question

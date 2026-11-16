@@ -54,6 +54,8 @@ export interface PaperPrintOptions {
   duration: boolean;
   set_label: boolean;
   instructions: boolean;
+  page_numbers: boolean;
+  watermark: boolean;
 }
 
 export interface Paper {

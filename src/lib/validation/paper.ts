@@ -27,6 +27,10 @@ export const paperPrintOptionsSchema = z.object({
   duration: z.boolean(),
   set_label: z.boolean(),
   instructions: z.boolean(),
+  // Added after papers already stored print_options, so both keys are optional
+  // and resolvePrintOptions backfills the default.
+  page_numbers: z.boolean().optional(),
+  watermark: z.boolean().optional(),
 });
 
 export type PaperPrintOptionsInput = z.infer<typeof paperPrintOptionsSchema>;

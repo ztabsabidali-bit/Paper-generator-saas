@@ -1,9 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
-import { Loader2, Save } from "lucide-react";
-import { saveInstitutionAction } from "@/actions/institution";
+import { useRef, useState, useTransition } from "react";
+import { Loader2, Save, Upload } from "lucide-react";
+import { saveInstitutionAction, uploadInstitutionLogoAction } from "@/actions/institution";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, Input, Textarea } from "@/components/ui/field";
@@ -19,8 +19,10 @@ export function InstitutionForm({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [name, setName] = useState(institution.name);
   const [tagline, setTagline] = useState(institution.tagline ?? "");
@@ -28,6 +30,41 @@ export function InstitutionForm({
   const [logoUrl, setLogoUrl] = useState(institution.logo_url ?? "");
   const [examSession, setExamSession] = useState(institution.exam_session ?? "");
   const [footerNote, setFooterNote] = useState(institution.footer_note ?? "");
+
+  async function handleLogoChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    // Reset so picking the same file twice still fires a change event.
+    event.target.value = "";
+    if (!file) return;
+
+    if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
+      setError("Use a PNG, JPG or WebP image.");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setError("Keep the logo under 2 MB.");
+      return;
+    }
+
+    setError(null);
+    setNotice(null);
+    setUploading(true);
+    const data = new FormData();
+    data.set("logo", file);
+    if (institutionId) data.set("institution_id", institutionId);
+
+    const result = await uploadInstitutionLogoAction(data);
+    setUploading(false);
+
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+
+    setLogoUrl(result.data.url);
+    setNotice("Logo uploaded. It will appear on the institution header.");
+    router.refresh();
+  }
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -103,7 +140,7 @@ export function InstitutionForm({
               <Field
                 label="Logo URL"
                 htmlFor="logo"
-                hint="Public Supabase Storage or CDN URL. Printed at 64×64."
+                hint="Optional. Paste a public image URL, or upload a file below."
               >
                 <Input
                   id="logo"
@@ -112,6 +149,40 @@ export function InstitutionForm({
                   placeholder="https://…/logo.png"
                 />
               </Field>
+            </div>
+
+            <div className="rounded-lg border border-slate-200 bg-slate-50/60 p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-slate-800">Upload a logo</p>
+                  <p className="text-[11px] leading-relaxed text-slate-500">
+                    PNG, JPG or WebP up to 2 MB. Square images print best. The file is stored
+                    with this institution&apos;s branding.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                >
+                  {uploading ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+                  ) : (
+                    <Upload className="h-3.5 w-3.5" aria-hidden />
+                  )}
+                  {uploading ? "Uploading…" : "Upload image"}
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={handleLogoChange}
+                  className="hidden"
+                  aria-label="Upload institution logo"
+                />
+              </div>
             </div>
 
             <Field label="Footer note" htmlFor="footer">

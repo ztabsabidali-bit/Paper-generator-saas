@@ -36,4 +36,21 @@ describe("resolvePrintOptions", () => {
     expect(resolvePrintOptions([false])).toEqual(DEFAULT_PRINT_OPTIONS);
     expect(resolvePrintOptions("title:false")).toEqual(DEFAULT_PRINT_OPTIONS);
   });
+
+  it("adds page numbers but no watermark for papers saved before the keys existed", () => {
+    const stored = { title: true, session: true, duration: true, set_label: true, instructions: true };
+    expect(resolvePrintOptions(stored)).toEqual({
+      ...stored,
+      page_numbers: true,
+      watermark: false,
+    });
+  });
+
+  it("honours explicit page number and watermark choices", () => {
+    expect(resolvePrintOptions({ page_numbers: false, watermark: true })).toEqual({
+      ...DEFAULT_PRINT_OPTIONS,
+      page_numbers: false,
+      watermark: true,
+    });
+  });
 });

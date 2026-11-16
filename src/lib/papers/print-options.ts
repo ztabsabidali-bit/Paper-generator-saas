@@ -6,6 +6,8 @@ export const PRINT_OPTION_KEYS = [
   "duration",
   "set_label",
   "instructions",
+  "page_numbers",
+  "watermark",
 ] as const;
 
 export type PrintOptionKey = (typeof PRINT_OPTION_KEYS)[number];
@@ -16,6 +18,8 @@ export const DEFAULT_PRINT_OPTIONS: PaperPrintOptions = {
   duration: true,
   set_label: true,
   instructions: true,
+  page_numbers: true,
+  watermark: false,
 };
 
 /**
@@ -36,5 +40,8 @@ export function resolvePrintOptions(value: unknown): PaperPrintOptions {
     set_label: typeof record.set_label === "boolean" ? record.set_label : true,
     instructions:
       typeof record.instructions === "boolean" ? record.instructions : true,
+    page_numbers:
+      typeof record.page_numbers === "boolean" ? record.page_numbers : true,
+    watermark: typeof record.watermark === "boolean" ? record.watermark : false,
   };
 }
