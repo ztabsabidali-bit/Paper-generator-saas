@@ -6,6 +6,10 @@ const nextConfig: NextConfig = {
   // working out of the box by serving the original files instead.
   images: { unoptimized: true },
   experimental: {
+    // Opt into the security-upgrade nudge channel: Next prints the advisory
+    // again on the next `next dev`/`next build` instead of silently sitting on
+    // a vulnerable version. Set by the 16.4.3 -> 16.4.6 advisory upgrade.
+    agentUpgrade: "security",
     serverActions: {
       // CSV imports accept files up to 2 MB. The rows travel as JSON, where
       // quoting and escaping can roughly double the payload, so leave headroom
