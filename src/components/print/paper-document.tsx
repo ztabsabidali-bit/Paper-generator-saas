@@ -173,9 +173,13 @@ export function PaperDocument({
                   const marks = item.marks_override ?? question.marks;
 
                   return (
-                    <li key={item.id} className="question-block flex gap-2 text-[12px]">
+                    <li
+                      key={item.id}
+                      dir={question.text_direction}
+                      className="question-block flex gap-2 text-[12px]"
+                    >
                       <span className="w-5 shrink-0 font-semibold text-slate-800">
-                        {questionNumber}.
+                        <span dir="ltr">{questionNumber}.</span>
                       </span>
                       <div className="min-w-0 flex-1">
                         <MathText
@@ -185,24 +189,34 @@ export function PaperDocument({
                         />
 
                         {options.length > 0 ? (
-                          <div className="mt-1.5 grid grid-cols-1 gap-x-4 gap-y-1 sm:grid-cols-2 print:grid-cols-2">
+                          <div
+                            dir={question.text_direction}
+                            className="mt-1.5 grid grid-cols-1 gap-x-4 gap-y-1 sm:grid-cols-2 print:grid-cols-2"
+                          >
                             {options.map((option) => (
-                              <div key={option.key} className="flex gap-1.5 text-[11.5px]">
-                                <span className="font-medium text-slate-500">
+                              <div
+                                key={option.key}
+                                dir={question.text_direction}
+                                className="flex gap-1.5 text-[11.5px]"
+                              >
+                                <span
+                                  dir="ltr"
+                                  className="font-medium text-slate-500"
+                                >
                                   {option.label}.
                                 </span>
                                 <MathText
                                   content={option.text}
                                   direction={question.text_direction}
-                                  className="text-[11.5px] leading-relaxed"
+                                  className="min-w-0 flex-1 text-[11.5px] leading-relaxed"
                                 />
                               </div>
                             ))}
                           </div>
                         ) : null}
                       </div>
-                      <span className="w-7 shrink-0 text-right text-[10px] text-slate-500">
-                        ({marks})
+                      <span className="w-7 shrink-0 text-end text-[10px] text-slate-500">
+                        <span dir="ltr">({marks})</span>
                       </span>
                     </li>
                   );
@@ -280,15 +294,23 @@ export function AnswerKeyDocument({
                       ? "Short"
                       : "Long"}
                 </td>
-                <td className="py-1.5 pr-3 text-slate-800">
+                <td
+                  dir={question?.text_direction ?? "ltr"}
+                  className="py-1.5 pr-3 text-start text-slate-800"
+                >
                   {label ? (
-                    <div className="flex gap-1.5">
-                      <span className="font-semibold">{label}.</span>
+                    <div
+                      dir={question?.text_direction ?? "ltr"}
+                      className="flex gap-1.5"
+                    >
+                      <span dir="ltr" className="font-semibold">
+                        {label}.
+                      </span>
                       {correct ? (
                         <MathText
                           content={correct.text}
                           direction={question?.text_direction ?? "ltr"}
-                          className="text-[11px] leading-relaxed"
+                          className="min-w-0 flex-1 text-[11px] leading-relaxed"
                         />
                       ) : null}
                     </div>

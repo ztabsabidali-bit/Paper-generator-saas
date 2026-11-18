@@ -570,10 +570,11 @@ export function QuestionForm({
             )}
 
             {type === "mcq" ? (
-              <ul className="space-y-1.5">
+              <ul className="space-y-1.5" dir={direction}>
                 {options.map((option, index) => (
                   <li
                     key={LETTERS[index]}
+                    dir={direction}
                     className={cn(
                       "flex gap-2 rounded-md px-2 py-1.5 text-sm",
                       correctIndex === index
@@ -581,8 +582,15 @@ export function QuestionForm({
                         : "text-slate-700",
                     )}
                   >
-                    <span className="font-medium text-slate-400">{LETTERS[index]}.</span>
-                    <MathText content={option || "—"} direction={direction} compact />
+                    <span dir="ltr" className="font-medium text-slate-400">
+                      {LETTERS[index]}.
+                    </span>
+                    <MathText
+                      content={option || "—"}
+                      direction={direction}
+                      compact
+                      className="min-w-0 flex-1"
+                    />
                   </li>
                 ))}
               </ul>

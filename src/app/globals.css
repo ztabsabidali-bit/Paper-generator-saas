@@ -47,7 +47,8 @@ body {
 
 .question-prose ul,
 .question-prose ol {
-  margin: 0.4rem 0 0.4rem 1.2rem;
+  margin-block: 0.4rem;
+  margin-inline-start: 1.2rem;
   list-style: disc;
 }
 
@@ -71,6 +72,8 @@ body {
   overflow-x: auto;
   overflow-y: hidden;
   padding: 0.15rem 0;
+  /* Math reads left-to-right even inside an Urdu paragraph. */
+  direction: ltr;
 }
 
 .text-urdu {
@@ -79,8 +82,17 @@ body {
   font-size: 1.05em;
 }
 
-[dir="rtl"] .question-prose {
+.question-prose[dir="rtl"] {
   text-align: right;
+}
+
+/*
+ * Blocks marked dir="auto" pick their direction from their own first strong
+ * character, so they must align to that direction even when an ancestor (for
+ * example an answer-key table cell) sets text-align: left.
+ */
+.question-prose [dir="auto"] {
+  text-align: start;
 }
 
 /* --------------------------------------------------------------------------

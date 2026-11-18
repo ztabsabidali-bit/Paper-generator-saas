@@ -120,9 +120,13 @@ export default async function PaperDetailPage({
                       if (!item.question) return null;
                       const options = resolveOptions(item.question, item.option_order);
                       return (
-                        <li key={item.id} className="flex gap-3">
+                        <li
+                          key={item.id}
+                          dir={item.question.text_direction}
+                          className="flex gap-3"
+                        >
                           <span className="w-5 shrink-0 text-sm font-medium text-slate-400">
-                            {item.display_order}.
+                            <span dir="ltr">{item.display_order}.</span>
                           </span>
                           <div className="min-w-0 flex-1">
                             <MathText
@@ -131,27 +135,35 @@ export default async function PaperDetailPage({
                               compact
                             />
                             {options.length > 0 ? (
-                              <div className="mt-2 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+                              <div
+                                dir={item.question.text_direction}
+                                className="mt-2 grid grid-cols-1 gap-1.5 sm:grid-cols-2"
+                              >
                                 {options.map((option) => (
                                   <div
                                     key={option.key}
+                                    dir={item.question!.text_direction}
                                     className="flex gap-1.5 text-[13px] text-slate-600"
                                   >
-                                    <span className="font-medium text-slate-400">
+                                    <span
+                                      dir="ltr"
+                                      className="font-medium text-slate-400"
+                                    >
                                       {option.label}.
                                     </span>
                                     <MathText
                                       content={option.text}
                                       direction={item.question!.text_direction}
                                       compact
+                                      className="min-w-0 flex-1"
                                     />
                                   </div>
                                 ))}
                               </div>
                             ) : null}
                           </div>
-                          <span className="w-8 shrink-0 text-right text-[11px] text-slate-500">
-                            ({item.marks_override ?? item.question.marks})
+                          <span className="w-8 shrink-0 text-end text-[11px] text-slate-500">
+                            <span dir="ltr">({item.marks_override ?? item.question.marks})</span>
                           </span>
                         </li>
                       );
@@ -178,9 +190,13 @@ export default async function PaperDetailPage({
                     if (!item.question) return null;
                     const label = correctOptionLabel(item.question, item.option_order);
                     return (
-                      <li key={item.id} className="flex gap-2 text-xs">
+                      <li
+                        key={item.id}
+                        dir={item.question.text_direction}
+                        className="flex gap-2 text-xs"
+                      >
                         <span className="w-5 shrink-0 text-slate-400">
-                          {item.display_order}.
+                          <span dir="ltr">{item.display_order}.</span>
                         </span>
                         {label ? (
                           <span className="font-medium text-slate-800">
@@ -191,7 +207,7 @@ export default async function PaperDetailPage({
                             content={item.question.correct_answer}
                             direction={item.question.text_direction}
                             compact
-                            className="line-clamp-2 text-slate-600"
+                            className="line-clamp-2 min-w-0 flex-1 text-slate-600"
                           />
                         ) : (
                           <span className="text-slate-400">—</span>
