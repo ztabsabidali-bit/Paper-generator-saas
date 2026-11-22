@@ -1,5 +1,8 @@
 import { correctOptionLabel, resolveOptions } from "@/lib/papers/answer-key";
 import { resolvePrintOptions } from "@/lib/papers/print-options";
+import { sectionHeading } from "@/lib/papers/sections";
+import { resolveQuestionDirection } from "@/lib/questions/direction";
+import { cn } from "@/lib/utils";
 import { MathText } from "@/components/questions/math-text";
 import type {
   InstitutionSettings,
@@ -10,6 +13,20 @@ import type {
 } from "@/types/domain";
 
 type PrintPaper = Paper & { subject: Subject | null };
+
+/**
+ * The direction to lay a question out in. A stale `ltr` on an Urdu question
+ * would otherwise leave its number and option labels on the wrong side.
+ */
+function itemDirection(item: PaperQuestionRow) {
+  const question = item.question;
+  if (!question) return "ltr" as const;
+  return resolveQuestionDirection(
+    question.text_direction,
+    question.question_text,
+    ...(question.options ?? []).map((option) => option.text),
+  );
+}
 
 function groupSections(items: PaperQuestionRow[]) {
   const groups = new Map<string, PaperQuestionRow[]>();
@@ -152,15 +169,26 @@ export function PaperDocument({
             (sum, item) => sum + (item.marks_override ?? item.question?.marks ?? 0),
             0,
           );
+          const urduSection = items.some((item) => itemDirection(item) === "rtl");
           return (
             <section key={section}>
-              <div className="print-section-heading mb-2 flex items-baseline justify-between border-b border-slate-300 pb-1">
-                <h3 className="text-[12px] font-bold uppercase tracking-wide text-slate-900">
-                  {section}
+              <div
+                dir={urduSection ? "rtl" : "ltr"}
+                className="print-section-heading mb-2 flex items-baseline justify-between gap-3 border-b border-slate-300 pb-1"
+              >
+                <h3
+                  className={cn(
+                    "text-[12px] font-bold text-slate-900",
+                    urduSection
+                      ? "font-[family-name:var(--font-urdu)] text-[13px] leading-loose"
+                      : "uppercase tracking-wide",
+                  )}
+                >
+                  {sectionHeading(section, urduSection)}
                 </h3>
-                <span className="text-[10px] text-slate-600">
+                <span className="shrink-0 text-[10px] text-slate-600">
                   {items.length} × {(sectionMarks / Math.max(items.length, 1)).toFixed(0)} ={" "}
-                  {sectionMarks} marks
+                  {sectionMarks} {urduSection ? "نمبر" : "marks"}
                 </span>
               </div>
 
@@ -171,11 +199,12 @@ export function PaperDocument({
                   if (!question) return null;
                   const options = resolveOptions(question, item.option_order);
                   const marks = item.marks_override ?? question.marks;
+                  const direction = itemDirection(item);
 
                   return (
                     <li
                       key={item.id}
-                      dir={question.text_direction}
+                      dir={direction}
                       className="question-block flex gap-2 text-[12px]"
                     >
                       <span className="w-5 shrink-0 font-semibold text-slate-800">
@@ -184,19 +213,19 @@ export function PaperDocument({
                       <div className="min-w-0 flex-1">
                         <MathText
                           content={question.question_text}
-                          direction={question.text_direction}
+                          direction={direction}
                           className="text-[12px] leading-relaxed"
                         />
 
                         {options.length > 0 ? (
                           <div
-                            dir={question.text_direction}
+                            dir={direction}
                             className="mt-1.5 grid grid-cols-1 gap-x-4 gap-y-1 sm:grid-cols-2 print:grid-cols-2"
                           >
                             {options.map((option) => (
                               <div
                                 key={option.key}
-                                dir={question.text_direction}
+                                dir={direction}
                                 className="flex gap-1.5 text-[11.5px]"
                               >
                                 <span
@@ -207,7 +236,7 @@ export function PaperDocument({
                                 </span>
                                 <MathText
                                   content={option.text}
-                                  direction={question.text_direction}
+                                  direction={direction}
                                   className="min-w-0 flex-1 text-[11.5px] leading-relaxed"
                                 />
                               </div>
@@ -283,6 +312,7 @@ export function AnswerKeyDocument({
             const label = question ? correctOptionLabel(question, item.option_order) : null;
             const resolved = question ? resolveOptions(question, item.option_order) : [];
             const correct = resolved.find((option) => option.isCorrect);
+            const direction = itemDirection(item);
 
             return (
               <tr key={item.id} className="border-b border-slate-100 align-top">
@@ -294,22 +324,16 @@ export function AnswerKeyDocument({
                       ? "Short"
                       : "Long"}
                 </td>
-                <td
-                  dir={question?.text_direction ?? "ltr"}
-                  className="py-1.5 pr-3 text-start text-slate-800"
-                >
+                <td dir={direction} className="py-1.5 pr-3 text-start text-slate-800">
                   {label ? (
-                    <div
-                      dir={question?.text_direction ?? "ltr"}
-                      className="flex gap-1.5"
-                    >
+                    <div dir={direction} className="flex gap-1.5">
                       <span dir="ltr" className="font-semibold">
                         {label}.
                       </span>
                       {correct ? (
                         <MathText
                           content={correct.text}
-                          direction={question?.text_direction ?? "ltr"}
+                          direction={direction}
                           className="min-w-0 flex-1 text-[11px] leading-relaxed"
                         />
                       ) : null}
@@ -317,7 +341,7 @@ export function AnswerKeyDocument({
                   ) : question?.correct_answer ? (
                     <MathText
                       content={question.correct_answer}
-                      direction={question.text_direction}
+                      direction={direction}
                       className="text-[11px] leading-relaxed"
                     />
                   ) : (

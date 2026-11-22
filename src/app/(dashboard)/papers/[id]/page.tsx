@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, KeyRound, Pencil, Printer } from "lucide-react";
 import { requireSession } from "@/lib/auth/guards";
 import { correctOptionLabel, resolveOptions } from "@/lib/papers/answer-key";
+import { sectionHeading } from "@/lib/papers/sections";
+import { resolveQuestionDirection } from "@/lib/questions/direction";
 import { getPaperWithSets } from "@/services/papers.service";
 import { MathText } from "@/components/questions/math-text";
 import { DeletePaperButton } from "@/components/papers/delete-paper-button";
@@ -15,6 +17,17 @@ import { cn } from "@/lib/utils";
 import type { PaperQuestionRow } from "@/types/domain";
 
 export const metadata = { title: "Paper" };
+
+/** Same resolved direction the print layout uses, so preview and print agree. */
+function itemDirection(item: PaperQuestionRow) {
+  const question = item.question;
+  if (!question) return "ltr" as const;
+  return resolveQuestionDirection(
+    question.text_direction,
+    question.question_text,
+    ...(question.options ?? []).map((option) => option.text),
+  );
+}
 
 export default async function PaperDetailPage({
   params,
@@ -110,67 +123,74 @@ export default async function PaperDetailPage({
             {!activeSet || activeSet.items.length === 0 ? (
               <p className="text-sm text-slate-500">This set has no questions.</p>
             ) : (
-              [...sections.entries()].map(([section, items]) => (
-                <section key={section}>
-                  <h3 className="mb-3 border-b border-slate-100 pb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    {section}
-                  </h3>
-                  <ol className="space-y-4">
-                    {items.map((item) => {
-                      if (!item.question) return null;
-                      const options = resolveOptions(item.question, item.option_order);
-                      return (
-                        <li
-                          key={item.id}
-                          dir={item.question.text_direction}
-                          className="flex gap-3"
-                        >
-                          <span className="w-5 shrink-0 text-sm font-medium text-slate-400">
-                            <span dir="ltr">{item.display_order}.</span>
-                          </span>
-                          <div className="min-w-0 flex-1">
-                            <MathText
-                              content={item.question.question_text}
-                              direction={item.question.text_direction}
-                              compact
-                            />
-                            {options.length > 0 ? (
-                              <div
-                                dir={item.question.text_direction}
-                                className="mt-2 grid grid-cols-1 gap-1.5 sm:grid-cols-2"
-                              >
-                                {options.map((option) => (
-                                  <div
-                                    key={option.key}
-                                    dir={item.question!.text_direction}
-                                    className="flex gap-1.5 text-[13px] text-slate-600"
-                                  >
-                                    <span
-                                      dir="ltr"
-                                      className="font-medium text-slate-400"
+              [...sections.entries()].map(([section, items]) => {
+                const urduSection = items.some((item) => itemDirection(item) === "rtl");
+                return (
+                  <section key={section}>
+                    <h3
+                      dir={urduSection ? "rtl" : "ltr"}
+                      className={cn(
+                        "mb-3 border-b border-slate-100 pb-1.5 text-xs font-semibold text-slate-500",
+                        urduSection
+                          ? "font-[family-name:var(--font-urdu)] text-sm leading-loose"
+                          : "uppercase tracking-wide",
+                      )}
+                    >
+                      {sectionHeading(section, urduSection)}
+                    </h3>
+                    <ol className="space-y-4">
+                      {items.map((item) => {
+                        if (!item.question) return null;
+                        const options = resolveOptions(item.question, item.option_order);
+                        const direction = itemDirection(item);
+                        return (
+                          <li key={item.id} dir={direction} className="flex gap-3">
+                            <span className="w-5 shrink-0 text-sm font-medium text-slate-400">
+                              <span dir="ltr">{item.display_order}.</span>
+                            </span>
+                            <div className="min-w-0 flex-1">
+                              <MathText
+                                content={item.question.question_text}
+                                direction={direction}
+                                compact
+                              />
+                              {options.length > 0 ? (
+                                <div
+                                  dir={direction}
+                                  className="mt-2 grid grid-cols-1 gap-1.5 sm:grid-cols-2"
+                                >
+                                  {options.map((option) => (
+                                    <div
+                                      key={option.key}
+                                      dir={direction}
+                                      className="flex gap-1.5 text-[13px] text-slate-600"
                                     >
-                                      {option.label}.
-                                    </span>
-                                    <MathText
-                                      content={option.text}
-                                      direction={item.question!.text_direction}
-                                      compact
-                                      className="min-w-0 flex-1"
-                                    />
-                                  </div>
-                                ))}
-                              </div>
-                            ) : null}
-                          </div>
-                          <span className="w-8 shrink-0 text-end text-[11px] text-slate-500">
-                            <span dir="ltr">({item.marks_override ?? item.question.marks})</span>
-                          </span>
-                        </li>
-                      );
-                    })}
-                  </ol>
-                </section>
-              ))
+                                      <span dir="ltr" className="font-medium text-slate-400">
+                                        {option.label}.
+                                      </span>
+                                      <MathText
+                                        content={option.text}
+                                        direction={direction}
+                                        compact
+                                        className="min-w-0 flex-1"
+                                      />
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : null}
+                            </div>
+                            <span className="w-8 shrink-0 text-end text-[11px] text-slate-500">
+                              <span dir="ltr">
+                                ({item.marks_override ?? item.question.marks})
+                              </span>
+                            </span>
+                          </li>
+                        );
+                      })}
+                    </ol>
+                  </section>
+                );
+              })
             )}
           </CardContent>
         </Card>
@@ -189,12 +209,9 @@ export default async function PaperDetailPage({
                   {activeSet.items.map((item) => {
                     if (!item.question) return null;
                     const label = correctOptionLabel(item.question, item.option_order);
+                    const direction = itemDirection(item);
                     return (
-                      <li
-                        key={item.id}
-                        dir={item.question.text_direction}
-                        className="flex gap-2 text-xs"
-                      >
+                      <li key={item.id} dir={direction} className="flex gap-2 text-xs">
                         <span className="w-5 shrink-0 text-slate-400">
                           <span dir="ltr">{item.display_order}.</span>
                         </span>
@@ -205,7 +222,7 @@ export default async function PaperDetailPage({
                         ) : item.question.correct_answer ? (
                           <MathText
                             content={item.question.correct_answer}
-                            direction={item.question.text_direction}
+                            direction={direction}
                             compact
                             className="line-clamp-2 min-w-0 flex-1 text-slate-600"
                           />
