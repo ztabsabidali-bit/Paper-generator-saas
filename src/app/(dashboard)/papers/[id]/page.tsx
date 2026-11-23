@@ -144,7 +144,7 @@ export default async function PaperDetailPage({
                         const options = resolveOptions(item.question, item.option_order);
                         const direction = itemDirection(item);
                         return (
-                          <li key={item.id} dir={direction} className="flex gap-3">
+                          <li key={item.id} dir={direction} className="flex items-baseline gap-3">
                             <span className="w-5 shrink-0 text-sm font-medium text-slate-400">
                               <span dir="ltr">{item.display_order}.</span>
                             </span>
@@ -163,7 +163,7 @@ export default async function PaperDetailPage({
                                     <div
                                       key={option.key}
                                       dir={direction}
-                                      className="flex gap-1.5 text-[13px] text-slate-600"
+                                      className="flex items-baseline gap-1.5 text-[13px] text-slate-600"
                                     >
                                       <span dir="ltr" className="font-medium text-slate-400">
                                         {option.label}.
@@ -211,7 +211,7 @@ export default async function PaperDetailPage({
                     const label = correctOptionLabel(item.question, item.option_order);
                     const direction = itemDirection(item);
                     return (
-                      <li key={item.id} dir={direction} className="flex gap-2 text-xs">
+                      <li key={item.id} dir={direction} className="flex items-baseline gap-2 text-xs">
                         <span className="w-5 shrink-0 text-slate-400">
                           <span dir="ltr">{item.display_order}.</span>
                         </span>

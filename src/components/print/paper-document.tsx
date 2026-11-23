@@ -205,7 +205,7 @@ export function PaperDocument({
                     <li
                       key={item.id}
                       dir={direction}
-                      className="question-block flex gap-2 text-[12px]"
+                      className="question-block flex items-baseline gap-2 text-[12px]"
                     >
                       <span className="w-5 shrink-0 font-semibold text-slate-800">
                         <span dir="ltr">{questionNumber}.</span>
@@ -226,7 +226,7 @@ export function PaperDocument({
                               <div
                                 key={option.key}
                                 dir={direction}
-                                className="flex gap-1.5 text-[11.5px]"
+                                className="flex items-baseline gap-1.5 text-[11.5px]"
                               >
                                 <span
                                   dir="ltr"
@@ -326,7 +326,7 @@ export function AnswerKeyDocument({
                 </td>
                 <td dir={direction} className="py-1.5 pr-3 text-start text-slate-800">
                   {label ? (
-                    <div dir={direction} className="flex gap-1.5">
+                    <div dir={direction} className="flex items-baseline gap-1.5">
                       <span dir="ltr" className="font-semibold">
                         {label}.
                       </span>

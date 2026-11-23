@@ -87,6 +87,16 @@ body {
 }
 
 /*
+ * The printed answer-key table is dense, so Urdu answers get a shorter line box
+ * than body prose. That keeps the option letter, the answer text and the
+ * neighbouring Q#/Type/Marks cells on one visual line instead of dropping the
+ * answer half a line below them.
+ */
+.print-answer-key .question-prose {
+  line-height: 1.8;
+}
+
+/*
  * Blocks marked dir="auto" pick their direction from their own first strong
  * character, so they must align to that direction even when an ancestor (for
  * example an answer-key table cell) sets text-align: left.
